@@ -1441,9 +1441,14 @@
     document.getElementById('admin-otp').value = '';
   }
 
-  function adminCardHTML(r){
+  function adminCardHTML(r, mode){
     const photoHTML = r.photo_url ? `<img src="${r.photo_url}" class="admin-thumb" alt="Attached photo">` : '';
     const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+    const actionsHTML = mode === 'pending'
+      ? `<button class="admin-approve-btn" onclick="adminAct('${r.id}', 'approve')">Approve</button>
+         <button class="admin-delete-btn" onclick="adminAct('${r.id}', 'delete')">Delete</button>`
+      : `<button class="admin-approve-btn" onclick="adminAct('${r.id}', 'hide')">Hide</button>
+         <button class="admin-delete-btn" onclick="adminAct('${r.id}', 'delete')">Delete</button>`;
     return `
       <div class="admin-card" id="admin-card-${r.id}">
         <div class="admin-card-top">
@@ -1459,8 +1464,7 @@
           <span><b>Submitted:</b> ${when}</span>
         </div>
         <div class="admin-actions">
-          <button class="admin-approve-btn" onclick="adminAct('${r.id}', 'approve')">Approve</button>
-          <button class="admin-delete-btn" onclick="adminAct('${r.id}', 'delete')">Delete</button>
+          ${actionsHTML}
         </div>
         <p class="admin-status-msg" id="admin-status-${r.id}"></p>
       </div>
@@ -1468,37 +1472,39 @@
   }
 
   async function adminLoadReports(){
-    const list = document.getElementById('admin-list');
-    list.innerHTML = '<div class="admin-empty-state">Loading…</div>';
+    const pendingList = document.getElementById('admin-list-pending');
+    const liveList = document.getElementById('admin-list-live');
+    pendingList.innerHTML = '<div class="admin-empty-state">Loading…</div>';
+    liveList.innerHTML = '';
     try{
-      const { reports } = await callFn('admin-list-reports', { token: adminToken });
+      const { pending, live } = await callFn('admin-list-reports', { token: adminToken });
       document.getElementById('admin-count-label').textContent =
-        `${reports.length} report${reports.length === 1 ? '' : 's'} awaiting review`;
-      if(reports.length === 0){
-        list.innerHTML = '<div class="admin-empty-state">No pending reports. Everything is caught up.</div>';
-        return;
-      }
-      list.innerHTML = reports.map(adminCardHTML).join('');
+        `${pending.length} pending · ${live.length} live`;
+
+      pendingList.innerHTML = pending.length === 0
+        ? '<div class="admin-empty-state">No pending reports. Everything is caught up.</div>'
+        : pending.map((r) => adminCardHTML(r, 'pending')).join('');
+
+      liveList.innerHTML = live.length === 0
+        ? '<div class="admin-empty-state">No reports are currently live.</div>'
+        : live.map((r) => adminCardHTML(r, 'live')).join('');
     } catch(err){
       if(err.message && err.message.includes('log in again')){
         adminLogout();
         return;
       }
-      list.innerHTML = `<div class="admin-empty-state">Couldn't load reports: ${escapeHTML(err.message)}</div>`;
+      pendingList.innerHTML = `<div class="admin-empty-state">Couldn't load reports: ${escapeHTML(err.message)}</div>`;
     }
   }
 
   async function adminAct(id, action){
     const statusEl = document.getElementById(`admin-status-${id}`);
     statusEl.style.display = 'block';
-    statusEl.textContent = action === 'approve' ? 'Approving…' : 'Deleting…';
+    statusEl.textContent = action === 'approve' ? 'Approving…' : action === 'hide' ? 'Hiding…' : 'Deleting…';
     try{
       await callFn('admin-approve-report', { token: adminToken, id, action });
-      const card = document.getElementById(`admin-card-${id}`);
-      card.style.opacity = '0.4';
-      card.style.pointerEvents = 'none';
-      statusEl.textContent = action === 'approve' ? 'Approved ✓' : 'Deleted ✓';
-      setTimeout(() => { card.remove(); }, 500);
+      statusEl.textContent = action === 'approve' ? 'Approved ✓' : action === 'hide' ? 'Hidden ✓' : 'Deleted ✓';
+      setTimeout(() => { adminLoadReports(); }, 500);
     } catch(err){
       statusEl.textContent = err.message || 'Something went wrong.';
     }
@@ -1558,15 +1564,20 @@
 
     <div id="admin-app">
       <div class="admin-topbar">
-        <h1>Reports pending review</h1>
+        <h1>Report review</h1>
         <button class="admin-logout-link" onclick="adminLogout()">Log out</button>
       </div>
-      <p class="admin-sub">Approve a report to make it visible on the public feed, or delete it if it shouldn't be published.</p>
+      <p class="admin-sub">Approve pending reports to publish them, or hide/delete reports that are already live.</p>
       <div class="admin-toolbar">
         <span id="admin-count-label" class="admin-sub" style="margin:0;"></span>
         <button class="admin-refresh-btn" onclick="adminLoadReports()">Refresh</button>
       </div>
-      <div id="admin-list"></div>
+
+      <h2 style="font-size:1.05rem; margin:24px 0 10px;">Pending review</h2>
+      <div id="admin-list-pending"></div>
+
+      <h2 style="font-size:1.05rem; margin:32px 0 10px;">Live on the site</h2>
+      <div id="admin-list-live"></div>
     </div>
 
   </div>
