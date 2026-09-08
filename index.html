@@ -727,6 +727,7 @@
     const { data, error } = await supabase
       .from('reports_public')
       .select('*')
+      .eq('verified', true)
       .order('created_at', { ascending: false });
     if(error){ console.error(error); return; }
     reports = (data || []).map(r => ({
@@ -740,9 +741,7 @@
 
   function feedItemHTML(r){
     const icon = categoryIcons[r.category] || "📌";
-    const badge = r.verified
-      ? '<span class="badge">Checked</span>'
-      : '<span class="badge pending">In review</span>';
+    const badge = '<span class="badge">Checked</span>';
     const photoHTML = r.photo ? `<img src="${r.photo}" class="thumb" alt="Attached photo">` : '';
     const place = r.county;
     const coordText = (typeof r.lat === 'number') ? `${place} · location verified` : place;
