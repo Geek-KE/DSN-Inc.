@@ -1239,9 +1239,16 @@
   async function daVerifyCodeOtp(){
     const otp = document.getElementById('c-otp').value.trim();
     try{
-      await callFn('verify-otp', { phone: daRedeemedPhone, purpose: 'access_code', otp });
-      await supabase.from('code_redemptions').update({ status: 'confirmed' }).eq('id', daRedeemedCodeId);
-      await supabase.from('access_codes').update({ redemptions: daRedeemedAccessCodeCount + 1 }).eq('id', daRedeemedAccessCodeId);
+      // verify-otp now does the confirm + increment itself server-side
+      // (via service_role) once the OTP checks out — see the edge function
+      // and confirm_code_redemption() in mtaa_pulse_schema.sql. The browser
+      // has no ability to call that function directly.
+      await callFn('verify-otp', {
+        phone: daRedeemedPhone,
+        purpose: 'access_code',
+        otp,
+        referenceId: daRedeemedCodeId
+      });
       daShowStatus('code-status', 'Access confirmed.', true);
     } catch(err){
       daShowStatus('code-status', err.message || 'Incorrect code.', false);
