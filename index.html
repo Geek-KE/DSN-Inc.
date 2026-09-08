@@ -1303,6 +1303,32 @@
       daShowStatus('payment-status', err.message || 'Incorrect code.', false);
     }
   }
+
+  // Expose functions used by inline onclick="" handlers in the HTML.
+  // This module's top-level functions are scoped to the module and are
+  // NOT visible to inline handlers by default — attaching them to
+  // `window` here is what fixes the "X is not defined" console errors.
+  Object.assign(window, {
+    captureLocation,
+    startCamera,
+    flipCamera,
+    capturePhoto,
+    retake,
+    sendPhoneOtp,
+    verifyPhoneOtp,
+    switchMapTab,
+    openMapModal,
+    closeMapModal,
+    showAudience,
+    showAccessTab,
+    selectLevel,
+    daPayStudent,
+    daRedeemCode,
+    daVerifyCodeOtp,
+    daSubmitRequest,
+    daVerifyPayment,
+    daVerifyPaymentOtp
+  });
 </script>
 
 </body>
