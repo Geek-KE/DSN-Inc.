@@ -212,6 +212,62 @@
   .leaflet-popup-content{font-family:'Inter',sans-serif; font-size:.85rem;}
 
   @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important;}}
+
+  /* ---------- Admin panel (hidden, reached via #admin) ---------- */
+  #admin-overlay{
+    display:none; position:fixed; inset:0; background:var(--bg,#f6f8f7); z-index:9999;
+    overflow-y:auto;
+  }
+  #admin-overlay .admin-wrap{max-width:760px; margin:0 auto; padding:32px 20px 80px;}
+  #admin-overlay h1{font-size:1.4rem; margin:0 0 6px;}
+  #admin-overlay .admin-sub{color:var(--ink-soft); font-size:.9rem; margin:0 0 28px;}
+  #admin-login-box{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    padding:24px; max-width:360px; margin:60px auto 0;
+  }
+  #admin-login-box label{display:block; font-size:.85rem; font-weight:600; margin:0 0 8px;}
+  #admin-login-box input{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    font-size:.95rem; margin-bottom:14px;
+  }
+  #admin-login-box button, .admin-refresh-btn{
+    width:100%; padding:11px; border:none; border-radius:8px; background:var(--ink);
+    color:#fff; font-weight:600; font-size:.92rem; cursor:pointer;
+  }
+  #admin-login-box .admin-err{color:#b3261e; font-size:.85rem; margin:-6px 0 12px; display:none;}
+  #admin-login-box .admin-info{color:var(--verified); font-size:.85rem; margin:-6px 0 12px; display:none;}
+  .admin-topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .admin-logout-link{font-size:.82rem; color:var(--ink-soft); text-decoration:underline; cursor:pointer; background:none; border:none;}
+  .admin-toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;}
+  .admin-refresh-btn{width:auto; padding:9px 16px; background:var(--verified);}
+  .admin-empty-state{
+    text-align:center; color:var(--ink-soft); padding:60px 20px; border:1px dashed var(--line);
+    border-radius:12px; font-size:.92rem;
+  }
+  .admin-card{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    padding:18px 20px; margin-bottom:16px;
+  }
+  .admin-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+  .admin-card-title{font-weight:700; font-size:1rem;}
+  .admin-badge-cat{
+    font-size:.72rem; font-weight:700; color:var(--warn); background:var(--warn-bg);
+    padding:3px 9px; border-radius:20px; white-space:nowrap;
+  }
+  .admin-card-desc{font-size:.9rem; color:var(--ink); line-height:1.5; margin:6px 0 10px;}
+  .admin-meta-row{display:flex; flex-wrap:wrap; gap:14px; font-size:.8rem; color:var(--ink-soft); margin-bottom:12px;}
+  .admin-meta-row b{color:var(--ink);}
+  .admin-thumb{max-width:100%; border-radius:8px; margin-bottom:12px; display:block;}
+  .admin-actions{display:flex; gap:10px;}
+  .admin-actions button{
+    flex:1; padding:9px; border:none; border-radius:8px; font-weight:600; font-size:.88rem; cursor:pointer;
+  }
+  .admin-approve-btn{background:var(--verified-bg); color:var(--verified);}
+  .admin-approve-btn:hover{background:var(--verified); color:#fff;}
+  .admin-delete-btn{background:#fbe9e7; color:#b3261e;}
+  .admin-delete-btn:hover{background:#b3261e; color:#fff;}
+  .admin-status-msg{font-size:.82rem; margin-top:8px; display:none;}
+  #admin-app{display:none;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -1308,7 +1364,151 @@
   // This module's top-level functions are scoped to the module and are
   // NOT visible to inline handlers by default — attaching them to
   // `window` here is what fixes the "X is not defined" console errors.
+  // ---------- Admin panel (hidden, reached via #admin) ----------
+  let adminToken = localStorage.getItem('mtaa_admin_token') || null;
+  let adminPhoneForOtp = '';
+
+  function showAdminOverlay(){
+    document.getElementById('admin-overlay').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    if(adminToken){
+      adminShowApp();
+    }
+  }
+
+  function hideAdminOverlay(){
+    document.getElementById('admin-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function checkAdminRoute(){
+    if(window.location.hash === '#admin'){
+      showAdminOverlay();
+    } else {
+      hideAdminOverlay();
+    }
+  }
+
+  async function adminSendCode(){
+    const phone = document.getElementById('admin-phone').value.trim();
+    const errEl = document.getElementById('admin-phone-err');
+    errEl.style.display = 'none';
+    if(!phone) return;
+    try{
+      await callFn('send-otp', { phone, purpose: 'admin_login' });
+      adminPhoneForOtp = phone;
+      document.getElementById('admin-step-phone').style.display = 'none';
+      document.getElementById('admin-step-otp').style.display = 'block';
+      const info = document.getElementById('admin-otp-info');
+      info.textContent = 'Code sent. Check your phone.';
+      info.style.display = 'block';
+    } catch(err){
+      errEl.textContent = err.message || 'Could not send code.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function adminVerifyCode(){
+    const otp = document.getElementById('admin-otp').value.trim();
+    const errEl = document.getElementById('admin-otp-err');
+    errEl.style.display = 'none';
+    if(!otp) return;
+    try{
+      const data = await callFn('verify-otp', { phone: adminPhoneForOtp, purpose: 'admin_login', otp });
+      adminToken = data.token;
+      localStorage.setItem('mtaa_admin_token', adminToken);
+      adminShowApp();
+    } catch(err){
+      errEl.textContent = err.message || 'Incorrect code.';
+      errEl.style.display = 'block';
+    }
+  }
+
+  function adminShowApp(){
+    document.getElementById('admin-login-box').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
+    adminLoadReports();
+  }
+
+  function adminLogout(){
+    localStorage.removeItem('mtaa_admin_token');
+    adminToken = null;
+    document.getElementById('admin-app').style.display = 'none';
+    document.getElementById('admin-login-box').style.display = 'block';
+    document.getElementById('admin-step-otp').style.display = 'none';
+    document.getElementById('admin-step-phone').style.display = 'block';
+    document.getElementById('admin-phone').value = '';
+    document.getElementById('admin-otp').value = '';
+  }
+
+  function adminCardHTML(r){
+    const photoHTML = r.photo_url ? `<img src="${r.photo_url}" class="admin-thumb" alt="Attached photo">` : '';
+    const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+    return `
+      <div class="admin-card" id="admin-card-${r.id}">
+        <div class="admin-card-top">
+          <div class="admin-card-title">${escapeHTML(r.title)}</div>
+          <span class="admin-badge-cat">${escapeHTML(r.category || 'Other')}</span>
+        </div>
+        <div class="admin-card-desc">${escapeHTML(r.description)}</div>
+        ${photoHTML}
+        <div class="admin-meta-row">
+          <span><b>County:</b> ${escapeHTML(r.county || '—')}</span>
+          <span><b>Reported by:</b> ${escapeHTML(r.pseudonym || 'Anonymous')}</span>
+          <span><b>Phone:</b> ${escapeHTML(r.phone || '—')}</span>
+          <span><b>Submitted:</b> ${when}</span>
+        </div>
+        <div class="admin-actions">
+          <button class="admin-approve-btn" onclick="adminAct('${r.id}', 'approve')">Approve</button>
+          <button class="admin-delete-btn" onclick="adminAct('${r.id}', 'delete')">Delete</button>
+        </div>
+        <p class="admin-status-msg" id="admin-status-${r.id}"></p>
+      </div>
+    `;
+  }
+
+  async function adminLoadReports(){
+    const list = document.getElementById('admin-list');
+    list.innerHTML = '<div class="admin-empty-state">Loading…</div>';
+    try{
+      const { reports } = await callFn('admin-list-reports', { token: adminToken });
+      document.getElementById('admin-count-label').textContent =
+        `${reports.length} report${reports.length === 1 ? '' : 's'} awaiting review`;
+      if(reports.length === 0){
+        list.innerHTML = '<div class="admin-empty-state">No pending reports. Everything is caught up.</div>';
+        return;
+      }
+      list.innerHTML = reports.map(adminCardHTML).join('');
+    } catch(err){
+      if(err.message && err.message.includes('log in again')){
+        adminLogout();
+        return;
+      }
+      list.innerHTML = `<div class="admin-empty-state">Couldn't load reports: ${escapeHTML(err.message)}</div>`;
+    }
+  }
+
+  async function adminAct(id, action){
+    const statusEl = document.getElementById(`admin-status-${id}`);
+    statusEl.style.display = 'block';
+    statusEl.textContent = action === 'approve' ? 'Approving…' : 'Deleting…';
+    try{
+      await callFn('admin-approve-report', { token: adminToken, id, action });
+      const card = document.getElementById(`admin-card-${id}`);
+      card.style.opacity = '0.4';
+      card.style.pointerEvents = 'none';
+      statusEl.textContent = action === 'approve' ? 'Approved ✓' : 'Deleted ✓';
+      setTimeout(() => { card.remove(); }, 500);
+    } catch(err){
+      statusEl.textContent = err.message || 'Something went wrong.';
+    }
+  }
+
+  window.addEventListener('hashchange', checkAdminRoute);
+  checkAdminRoute();
+
   Object.assign(window, {
+    adminSendCode, adminVerifyCode, adminLogout, adminAct, adminLoadReports,
     captureLocation,
     startCamera,
     flipCamera,
@@ -1330,6 +1530,47 @@
     daVerifyPaymentOtp
   });
 </script>
+
+
+<!-- ---------- Hidden admin panel: only shown via #admin in the URL ---------- -->
+<div id="admin-overlay">
+  <div class="admin-wrap">
+
+    <div id="admin-login-box">
+      <h1>Admin login</h1>
+      <p class="admin-sub">Mtaa Pulse report review</p>
+
+      <div id="admin-step-phone">
+        <label for="admin-phone">Admin phone number</label>
+        <input type="tel" id="admin-phone" placeholder="" autocomplete="off" onkeydown="if(event.key==='Enter') adminSendCode()">
+        <p class="admin-err" id="admin-phone-err"></p>
+        <button onclick="adminSendCode()">Send code</button>
+      </div>
+
+      <div id="admin-step-otp" style="display:none;">
+        <label for="admin-otp">Enter the code sent to your phone</label>
+        <input type="text" id="admin-otp" inputmode="numeric" placeholder="6-digit code" onkeydown="if(event.key==='Enter') adminVerifyCode()">
+        <p class="admin-err" id="admin-otp-err"></p>
+        <p class="admin-info" id="admin-otp-info"></p>
+        <button onclick="adminVerifyCode()">Verify and log in</button>
+      </div>
+    </div>
+
+    <div id="admin-app">
+      <div class="admin-topbar">
+        <h1>Reports pending review</h1>
+        <button class="admin-logout-link" onclick="adminLogout()">Log out</button>
+      </div>
+      <p class="admin-sub">Approve a report to make it visible on the public feed, or delete it if it shouldn't be published.</p>
+      <div class="admin-toolbar">
+        <span id="admin-count-label" class="admin-sub" style="margin:0;"></span>
+        <button class="admin-refresh-btn" onclick="adminLoadReports()">Refresh</button>
+      </div>
+      <div id="admin-list"></div>
+    </div>
+
+  </div>
+</div>
 
 </body>
 </html>
