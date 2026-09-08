@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DSN Inc. | Tell Us About Your Hood</title>
+<title>Mtaa Pulse | Community Insight, Verified at the Source</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -25,8 +25,12 @@
 
   header.site-nav{position:sticky; top:0; z-index:60; background:rgba(232,244,250,.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--line);}
   .nav-inner{max-width:1180px; margin:0 auto; padding:16px 32px; display:flex; align-items:center; justify-content:space-between;}
-  .logo{display:flex; align-items:center; gap:10px; font-family:'Source Serif 4',serif; font-weight:700; font-size:1.25rem; color:var(--trust); text-decoration:none;}
-  .logo-mark{width:34px; height:34px; border-radius:9px; background:linear-gradient(155deg,var(--signal),var(--trust)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:.85rem; font-weight:700; flex-shrink:0;}
+  .logo{display:flex; align-items:center; gap:11px; font-family:'Source Serif 4',serif; font-weight:600; font-size:1.3rem; color:var(--trust); text-decoration:none; letter-spacing:.01em;}
+  .logo-word .mtaa{font-weight:600;}
+  .logo-word .pulse{font-weight:700; font-style:italic; color:var(--signal);}
+  .logo-mark{width:38px; height:38px; border-radius:11px; background:linear-gradient(155deg,var(--signal),var(--trust)); display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:7px;}
+  .logo-mark svg{width:100%; height:100%; display:block;}
+  .pulse-line{fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
   nav.links{display:flex; gap:26px; align-items:center;}
   nav.links a{color:var(--ink); text-decoration:none; font-size:.95rem; font-weight:500; padding:6px 2px; border-bottom:2px solid transparent; transition:border-color .18s ease,color .18s ease;}
   nav.links a:hover{border-color:var(--signal); color:var(--trust);}
@@ -196,7 +200,14 @@
 
 <header class="site-nav">
   <div class="nav-inner">
-    <a href="#top" class="logo"><span class="logo-mark">DSN</span> DSN Inc.</a>
+    <a href="#top" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <polyline class="pulse-line" points="2,22 11,22 15,10 21,32 25,16 29,22 38,22"/>
+        </svg>
+      </span>
+      <span class="logo-word"><span class="mtaa">Mtaa</span> <span class="pulse">Pulse</span></span>
+    </a>
     <button class="menu-toggle" aria-label="Toggle menu" onclick="document.querySelector('.links').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
@@ -214,9 +225,9 @@
 <section class="hero" id="top">
   <div class="wrap">
     <div>
-      <div class="eyebrow-line"><span class="pulse-dot"></span> Real stories from real neighborhoods</div>
-      <h1>Tell us about your hood. The good and the bad.</h1>
-      <p class="lede">Speak honestly about where you live. What you're proud of. What's broken. What's changing. Your stories build a real picture of Kenya, one leaders and researchers can act on.</p>
+      <div class="eyebrow-line"><span class="pulse-dot"></span> Community Insight, Verified at the Source</div>
+      <h1>Your Neighborhood. Your Perspective. Your Voice.</h1>
+      <p class="lede">A platform for residents to share an honest account of daily life in their community: its strengths, its challenges, and its progress. Every story contributes to a credible national picture that researchers, institutions, and policymakers can rely on.</p>
       <div class="hero-ctas">
         <a href="#report" class="btn btn-primary">Share your story</a>
         <a href="#browse" class="btn btn-ghost">Read what others said</a>
@@ -372,12 +383,12 @@
     <div class="section-head">
       <span class="section-kicker">Data Usage &amp; Privacy</span>
       <h2>How Your Story Is Used</h2>
-      <p>Your submission is published in the form you provide it. Beyond publication, DSN aggregates submissions to identify patterns across regions, including recurring concerns, emerging improvements, and areas of community pride. It is this aggregated insight, not personal information, that informs our reporting and services.</p>
+      <p>Your submission is published in the form you provide it. Beyond publication, Mtaa Pulse aggregates submissions to identify patterns across regions, including recurring concerns, emerging improvements, and areas of community pride. It is this aggregated insight, not personal information, that informs our reporting and services.</p>
     </div>
     <div class="stat-row" style="flex-direction:column; gap:14px; max-width:640px;">
       <div class="stat" style="border-left-color:var(--verified);"><span>Academic and research institutions access aggregated, ward-level trend data for study and analysis.</span></div>
       <div class="stat" style="border-left-color:var(--verified);"><span>Investors and public officials may request the same category of aggregated trend data. Personal identifiers, including names, phone numbers, and precise coordinates, are never included or disclosed.</span></div>
-      <div class="stat" style="border-left-color:var(--verified);"><span>Phone numbers provided for follow-up are accessible only to authorized DSN personnel and are never shared, sold, or included in any external release.</span></div>
+      <div class="stat" style="border-left-color:var(--verified);"><span>Phone numbers provided for follow-up are accessible only to authorized Mtaa Pulse personnel and are never shared, sold, or included in any external release.</span></div>
     </div>
   </div>
 </section>
@@ -460,7 +471,7 @@
         <div class="access-form">
           <div class="field">
             <label for="c-code">Access code</label>
-            <input type="text" id="c-code" placeholder="DSN-XXXXXXXX">
+            <input type="text" id="c-code" placeholder="SD-XXXXXXXX">
           </div>
           <div class="field">
             <label for="c-phone">Phone number</label>
@@ -510,7 +521,7 @@
             <p class="hint" style="margin-bottom:14px;">Already have a quote and paid? Verify it here.</p>
             <div class="field">
               <label for="p-code">Access code</label>
-              <input type="text" id="p-code" placeholder="DSN-XXXXXXXX">
+              <input type="text" id="p-code" placeholder="SD-XXXXXXXX">
             </div>
             <div class="field">
               <label for="p-ref">M-Pesa transaction code or card receipt</label>
@@ -569,7 +580,7 @@
 
 <footer>
   <div class="wrap footer-inner">
-    <p>© 2026 DSN Inc. All rights reserved.</p>
+    <p>© 2026 Mtaa Pulse, a DSN Group company.</p>
     <div class="footer-links">
       <a href="#report">Report</a>
       <a href="#browse">Browse Reports</a>
@@ -864,7 +875,7 @@
     const pseudonym = document.getElementById('r-pseudonym').value.trim() || "Anonymous";
 
     // Real name, phone number, exact coordinates, and the resolved
-    // county-to-village hierarchy are sent to DSN's backend only, for
+    // county-to-village hierarchy are sent to Mtaa Pulse's backend only, for
     // verification and optional follow-up. None of this is attached to the
     // public story rendered on this page or included in anything shared or
     // sold. The photo, if any, carries the same coordinates embedded in its
@@ -930,7 +941,7 @@
     `).join('');
   }
 
-  // In production this happens on DSN's team as a quick sanity check, not an
+  // In production this happens on Mtaa Pulse's team as a quick sanity check, not an
   // identity check. This button stands in for that step in this preview.
   function verifyReport(id){
     const idx = pendingReports.findIndex(r => r.id === id);
