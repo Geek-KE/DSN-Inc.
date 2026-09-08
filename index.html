@@ -635,7 +635,29 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  // ---------- Supabase config ----------
+  // TODO: replace with your project's values (Project Settings → API).
+  const SUPABASE_URL = 'https://mpoeoawyqyevbybymqpr.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_wTfC87Rv20ibZF4PdCMGIg_QhbIroRf';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Edge function base (same project, no separate domain needed)
+  const FN = (name) => `${SUPABASE_URL}/functions/v1/${name}`;
+
+  async function callFn(name, body){
+    const res = await fetch(FN(name), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+
   // ---------- seed data ----------
   const categoryIcons = {
     "Roads & infrastructure":"🛣️","Security":"🛡️","Soil & agriculture":"🌱",
@@ -644,6 +666,21 @@
   };
 
   let reports = [];
+
+  async function loadReports(){
+    const { data, error } = await supabase
+      .from('reports_public')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if(error){ console.error(error); return; }
+    reports = (data || []).map(r => ({
+      title: r.title, category: r.category, desc: r.description,
+      county: r.county, verified: r.verified, pseudonym: r.pseudonym,
+      photo: r.photo_url, lat: null, lng: null
+    }));
+    renderReportList();
+    renderMapMarkers();
+  }
 
   function feedItemHTML(r){
     const icon = categoryIcons[r.category] || "📌";
@@ -862,23 +899,33 @@
     el.className = 'geo-status ' + (ok ? 'ok' : 'bad');
   }
 
-  function sendPhoneOtp(){
+  async function sendPhoneOtp(){
     const phone = document.getElementById('r-phone').value.trim();
     if(!phone){ daShowPhoneStatus('Enter a phone number first.', false); return; }
-    // In production this calls the backend to dispatch a real SMS OTP.
-    otpSentTo = phone;
-    phoneVerified = false;
-    document.getElementById('otp-verify-block').style.display = 'block';
-    daShowPhoneStatus('Code sent. Enter it below to verify this number.', true);
+    daShowPhoneStatus('Sending code…', true);
+    try{
+      await callFn('send-otp', { phone, purpose: 'report_submit' });
+      otpSentTo = phone;
+      phoneVerified = false;
+      document.getElementById('otp-verify-block').style.display = 'block';
+      daShowPhoneStatus('Code sent. Enter it below to verify this number.', true);
+    } catch(err){
+      daShowPhoneStatus(err.message || 'Could not send code. Try again.', false);
+    }
   }
 
-  function verifyPhoneOtp(){
+  async function verifyPhoneOtp(){
     const otp = document.getElementById('r-otp').value.trim();
     if(!otpSentTo){ daShowPhoneStatus('Send a code first.', false); return; }
     if(otp.length < 4){ daShowPhoneStatus('Enter the code you received.', false); return; }
-    // In production this call validates the OTP against the backend record.
-    phoneVerified = true;
-    daShowPhoneStatus('Number verified.', true);
+    try{
+      await callFn('verify-otp', { phone: otpSentTo, purpose: 'report_submit', otp });
+      phoneVerified = true;
+      daShowPhoneStatus('Number verified.', true);
+    } catch(err){
+      phoneVerified = false;
+      daShowPhoneStatus(err.message || 'Incorrect code.', false);
+    }
   }
 
   document.getElementById('r-phone').addEventListener('input', () => {
@@ -887,10 +934,7 @@
   });
 
   // ---------- form submit: reports start pending, only go live once checked ----------
-  let pendingReports = [];
-  let pendingIdCounter = 1;
-
-  document.getElementById('report-form').addEventListener('submit', function(e){
+  document.getElementById('report-form').addEventListener('submit', async function(e){
     e.preventDefault();
 
     if(!capturedLocation){
@@ -931,83 +975,67 @@
       photoData = embedGpsInJpeg(photoData, capturedLocation.lat, capturedLocation.lng);
     }
 
-    const pendingReport = {
-      id: pendingIdCounter++,
-      title, category, desc, pseudonym, county,
-      lat: capturedLocation.lat,
-      lng: capturedLocation.lng,
-      hierarchy: capturedLocation.hierarchy,
-      photo: photoData
-    };
+    const submitBtn = this.querySelector('button[type=submit]');
+    submitBtn.disabled = true;
 
-    pendingReports.unshift(pendingReport);
-    renderPendingList();
+    try{
+      let photoUrl = null;
+      if(photoData){
+        const blob = await (await fetch(photoData)).blob();
+        const path = `${crypto.randomUUID()}.jpg`;
+        const { error: upErr } = await supabase.storage.from('report-photos').upload(path, blob, { contentType:'image/jpeg' });
+        if(upErr) throw upErr;
+        photoUrl = supabase.storage.from('report-photos').getPublicUrl(path).data.publicUrl;
+      }
 
-    const msg = document.getElementById('submit-msg');
-    msg.style.display = 'inline';
-    setTimeout(()=> msg.style.display = 'none', 4000);
+      const { error: insertErr } = await supabase.from('reports').insert({
+        title, category, description: desc, pseudonym, county,
+        phone: document.getElementById('r-phone').value.trim(),
+        lat: capturedLocation.lat, lng: capturedLocation.lng,
+        accuracy: capturedLocation.accuracy,
+        hierarchy: capturedLocation.hierarchy,
+        county_mismatch: !!capturedLocation.mismatch,
+        photo_url: photoUrl,
+        verified: false
+      });
+      if(insertErr) throw insertErr;
 
-    this.reset();
-    ['photo'].forEach(kind => {
-      capturedImages[kind] = null;
-      document.getElementById(kind+'-preview').style.display = 'none';
-      document.getElementById(kind+'-capture-btn').style.display = 'none';
-      document.getElementById(kind+'-flip-btn')?.style.setProperty('display','none');
-      document.getElementById(kind+'-retake-btn').style.display = 'none';
-      document.getElementById(kind+'-video').style.display = 'none';
-      cameraStreams[kind]?.getTracks().forEach(t=>t.stop());
-      cameraStreams[kind] = null;
-    });
-    document.getElementById('geo-status').textContent = "Not captured yet";
-    document.getElementById('geo-status').className = "geo-status";
-    capturedLocation = null;
-    phoneVerified = false;
-    otpSentTo = null;
-    document.getElementById('otp-verify-block').style.display = 'none';
-    document.getElementById('phone-status').textContent = '';
+      const msg = document.getElementById('submit-msg');
+      msg.textContent = 'Story submitted — pending review.';
+      msg.style.display = 'inline';
+      setTimeout(()=> msg.style.display = 'none', 4000);
+
+      this.reset();
+      ['photo'].forEach(kind => {
+        capturedImages[kind] = null;
+        document.getElementById(kind+'-preview').style.display = 'none';
+        document.getElementById(kind+'-capture-btn').style.display = 'none';
+        document.getElementById(kind+'-flip-btn')?.style.setProperty('display','none');
+        document.getElementById(kind+'-retake-btn').style.display = 'none';
+        document.getElementById(kind+'-video').style.display = 'none';
+        cameraStreams[kind]?.getTracks().forEach(t=>t.stop());
+        cameraStreams[kind] = null;
+      });
+      document.getElementById('geo-status').textContent = "Not captured yet";
+      document.getElementById('geo-status').className = "geo-status";
+      capturedLocation = null;
+      phoneVerified = false;
+      otpSentTo = null;
+      document.getElementById('otp-verify-block').style.display = 'none';
+      document.getElementById('phone-status').textContent = '';
+    } catch(err){
+      daShowPhoneStatus(err.message || 'Could not submit. Try again.', false);
+    } finally {
+      submitBtn.disabled = false;
+    }
   });
 
-  function renderPendingList(){
-    const box = document.getElementById('pending-box');
-    const list = document.getElementById('pending-list');
-    if(pendingReports.length === 0){
-      box.style.display = 'none';
-      return;
-    }
-    box.style.display = 'block';
-    list.innerHTML = pendingReports.map(r => `
-      <div class="pending-item">
-        <div>
-          <div class="p-title">${escapeHTML(r.title)}</div>
-          <div class="p-status">Shared by ${escapeHTML(r.pseudonym)}, in review</div>
-        </div>
-        <button class="verify-btn" onclick="verifyReport(${r.id})">Approve &amp; publish</button>
-      </div>
-    `).join('');
-  }
-
-  // In production this happens on Mtaa Pulse's team as a quick sanity check, not an
-  // identity check. This button stands in for that step in this preview.
-  function verifyReport(id){
-    const idx = pendingReports.findIndex(r => r.id === id);
-    if(idx === -1) return;
-    const r = pendingReports.splice(idx, 1)[0];
-    reports.unshift({
-      title: r.title,
-      category: r.category,
-      desc: r.desc,
-      county: r.county,
-      lat: r.lat,
-      lng: r.lng,
-      hierarchy: r.hierarchy,
-      verified: true,
-      pseudonym: r.pseudonym,
-      photo: r.photo
-    });
-    renderPendingList();
-    renderReportList();
-    renderMapMarkers();
-  }
+  // NOTE: approving/publishing a pending report is now a moderation action
+  // that must happen with elevated privileges (the anon key cannot flip
+  // `verified` — there is no RLS UPDATE policy for it on purpose). Do this
+  // from the Supabase Table Editor, or build a small admin page that signs
+  // in with a Supabase Auth account you've granted a service-role-backed
+  // "moderator" edge function to.
 
   // ---------- map: approximate county centers for county-level plotting ----------
   const COUNTY_CENTERS = {
@@ -1133,12 +1161,9 @@
     document.getElementById('aud-'+id).classList.add('active');
   }
 
-  renderReportList();
+  loadReports();
 
   // ---------- data access (student pay, university code, investor/politician request) ----------
-  // Point this at your deployed server/index.js from the access-system backend.
-  const DA_API = 'https://your-api-domain.com/api';
-  const DA_USER_ID = null; // TODO: set from your auth session once login exists
 
   function showAccessTab(btn, id){
     document.querySelectorAll('#access .access-tab').forEach(b=>b.classList.remove('active'));
@@ -1160,50 +1185,66 @@
     el.className = 'geo-status ' + (ok ? 'ok' : 'bad');
   }
 
+  const LEVEL_PRICES = { undergrad: 333, masters: 777, phd: 7777 };
+
+  // M-Pesa STK Push needs a Safaricom Daraja app (paybill/till, consumer
+  // key/secret, callback URL) — a separate integration from Supabase/OTP.
+  // For now this records the intent as pending_payment; once you have
+  // Daraja set up, add an edge function that triggers STK Push here and
+  // flips this row to 'paid' from the Daraja callback.
   async function daPayStudent(){
     if(!daSelectedLevel) return daShowStatus('student-status', 'Pick a level first.', false);
     const phone = document.getElementById('s-phone').value.trim();
+    if(!phone) return daShowStatus('student-status', 'Enter your M-Pesa phone number.', false);
     try{
-      const res = await fetch(`${DA_API}/students/subscribe/pay`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId: DA_USER_ID, level: daSelectedLevel, phone })
+      const { error } = await supabase.from('student_subscriptions').insert({
+        level: daSelectedLevel, phone, amount_kes: LEVEL_PRICES[daSelectedLevel]
       });
-      const data = await res.json();
-      daShowStatus('student-status', res.ok ? data.message : data.error, res.ok);
+      if(error) throw error;
+      daShowStatus('student-status', 'Request recorded. M-Pesa STK Push isn\u2019t wired up yet \u2014 that needs a separate Daraja integration.', true);
     } catch(err){
-      daShowStatus('student-status', 'Could not reach the payment service. Try again shortly.', false);
+      daShowStatus('student-status', err.message || 'Could not reach the payment service. Try again shortly.', false);
     }
   }
 
-  let daRedeemedCodeId = null;
+  let daRedeemedCodeId = null, daRedeemedPhone = null, daRedeemedAccessCodeId = null, daRedeemedAccessCodeCount = 0;
   async function daRedeemCode(){
     const code = document.getElementById('c-code').value.trim();
     const phone = document.getElementById('c-phone').value.trim();
     const email = document.getElementById('c-email').value.trim();
+    if(!code || !phone || !email) return daShowStatus('code-status', 'Fill in code, phone and email.', false);
     try{
-      const res = await fetch(`${DA_API}/students/access-code/redeem`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId: DA_USER_ID, code, phone, email })
-      });
-      const data = await res.json();
-      daShowStatus('code-status', res.ok ? data.message : data.error, res.ok);
-      if(res.ok){ daRedeemedCodeId = data.codeId; document.getElementById('otp-block').style.display = 'block'; }
+      const { data: codeRow, error: codeErr } = await supabase
+        .from('access_codes').select('*').eq('code', code).eq('active', true).maybeSingle();
+      if(codeErr) throw codeErr;
+      if(!codeRow) return daShowStatus('code-status', 'That code is not valid.', false);
+      if(codeRow.redemptions >= codeRow.max_redemptions) return daShowStatus('code-status', 'That code has already been used.', false);
+
+      const { data: redemption, error: redErr } = await supabase
+        .from('code_redemptions').insert({ access_code_id: codeRow.id, phone, email }).select().single();
+      if(redErr) throw redErr;
+
+      await callFn('send-otp', { phone, purpose: 'access_code', referenceId: redemption.id });
+      daRedeemedCodeId = redemption.id;
+      daRedeemedPhone = phone;
+      daRedeemedAccessCodeId = codeRow.id;
+      daRedeemedAccessCodeCount = codeRow.redemptions;
+      daShowStatus('code-status', 'Code sent. Enter it below to verify this number.', true);
+      document.getElementById('otp-block').style.display = 'block';
     } catch(err){
-      daShowStatus('code-status', 'Could not reach the access service. Try again shortly.', false);
+      daShowStatus('code-status', err.message || 'Could not reach the access service. Try again shortly.', false);
     }
   }
 
   async function daVerifyCodeOtp(){
     const otp = document.getElementById('c-otp').value.trim();
     try{
-      const res = await fetch(`${DA_API}/students/access-code/verify-otp`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId: DA_USER_ID, codeId: daRedeemedCodeId, otp })
-      });
-      const data = await res.json();
-      daShowStatus('code-status', res.ok ? data.message : data.error, res.ok);
+      await callFn('verify-otp', { phone: daRedeemedPhone, purpose: 'access_code', otp });
+      await supabase.from('code_redemptions').update({ status: 'confirmed' }).eq('id', daRedeemedCodeId);
+      await supabase.from('access_codes').update({ redemptions: daRedeemedAccessCodeCount + 1 }).eq('id', daRedeemedAccessCodeId);
+      daShowStatus('code-status', 'Access confirmed.', true);
     } catch(err){
-      daShowStatus('code-status', 'Could not reach the access service. Try again shortly.', false);
+      daShowStatus('code-status', err.message || 'Incorrect code.', false);
     }
   }
 
@@ -1212,47 +1253,47 @@
     const description = document.getElementById('req-desc').value.trim();
     if(!description) return daShowStatus('request-status', 'Describe what data you need first.', false);
     try{
-      const res = await fetch(`${DA_API}/requests`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId: DA_USER_ID, requesterType, description })
-      });
-      const data = await res.json();
-      daShowStatus('request-status', res.ok ? `Request submitted (ref: ${data.id}). We'll send a quote soon.` : data.error, res.ok);
+      const { data, error } = await supabase.from('data_requests')
+        .insert({ requester_type: requesterType, description }).select().single();
+      if(error) throw error;
+      daShowStatus('request-status', `Request submitted (ref: ${data.id.slice(0,8)}). We'll send a quote soon.`, true);
     } catch(err){
-      daShowStatus('request-status', 'Could not reach the request service. Try again shortly.', false);
+      daShowStatus('request-status', err.message || 'Could not reach the request service. Try again shortly.', false);
     }
   }
 
-  let daPaymentCodeId = null;
+  // Card/M-Pesa reference checking here is a manual review step (status
+  // stays 'pending_review' until your team confirms the payment landed) —
+  // wiring automatic verification needs Daraja (M-Pesa) and/or Paystack
+  // webhooks, which are separate from Supabase/OTP.
+  let daPaymentVerificationId = null, daPaymentPhone = null;
   async function daVerifyPayment(){
     const code = document.getElementById('p-code').value.trim();
     const ref = document.getElementById('p-ref').value.trim();
     const phone = document.getElementById('p-phone').value.trim();
     const email = document.getElementById('p-email').value.trim();
+    if(!ref || !phone || !email) return daShowStatus('payment-status', 'Fill in the payment reference, phone and email.', false);
     try{
-      const res = await fetch(`${DA_API}/requests/access/verify-payment`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId: DA_USER_ID, code, cardReceiptRef: ref, phone, email })
-      });
-      const data = await res.json();
-      daShowStatus('payment-status', res.ok ? data.message : data.error, res.ok);
-      if(res.ok){ daPaymentCodeId = data.codeId; document.getElementById('p-otp-block').style.display = 'block'; }
+      const { data, error } = await supabase.from('payment_verifications')
+        .insert({ code: code || null, card_or_mpesa_ref: ref, phone, email }).select().single();
+      if(error) throw error;
+      await callFn('send-otp', { phone, purpose: 'access_payment', referenceId: data.id });
+      daPaymentVerificationId = data.id;
+      daPaymentPhone = phone;
+      daShowStatus('payment-status', 'Payment logged for review. Code sent \u2014 enter it below.', true);
+      document.getElementById('p-otp-block').style.display = 'block';
     } catch(err){
-      daShowStatus('payment-status', 'Could not reach the payment service. Try again shortly.', false);
+      daShowStatus('payment-status', err.message || 'Could not reach the payment service. Try again shortly.', false);
     }
   }
 
   async function daVerifyPaymentOtp(){
     const otp = document.getElementById('p-otp').value.trim();
     try{
-      const res = await fetch(`${DA_API}/requests/access/verify-otp`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ userId: DA_USER_ID, codeId: daPaymentCodeId, otp })
-      });
-      const data = await res.json();
-      daShowStatus('payment-status', res.ok ? data.message : data.error, res.ok);
+      await callFn('verify-otp', { phone: daPaymentPhone, purpose: 'access_payment', otp });
+      daShowStatus('payment-status', 'Number verified. Our team will confirm your payment and follow up by email.', true);
     } catch(err){
-      daShowStatus('payment-status', 'Could not reach the payment service. Try again shortly.', false);
+      daShowStatus('payment-status', err.message || 'Incorrect code.', false);
     }
   }
 </script>
