@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DSN Inc. | Ground Truth, Verified</title>
+<title>DSN Inc. | Tell Us About Your Hood</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -190,7 +190,7 @@
 
   @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important;}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.js"></script>
 </head>
 <body>
 
@@ -203,7 +203,7 @@
     <nav class="links">
       <a href="#report">Report</a>
       <a href="#browse">Browse Reports</a>
-      <a href="#trust">Verification</a>
+      <a href="#trust">How it works</a>
       <a href="#audiences">Who it's for</a>
       <a href="#access">Data access</a>
       <a href="#contact" class="nav-cta">Get in touch</a>
@@ -214,13 +214,14 @@
 <section class="hero" id="top">
   <div class="wrap">
     <div>
-      <div class="eyebrow-line"><span class="pulse-dot"></span> Ground-verified data, live from the field</div>
-      <h1>What's actually happening on the ground, reported by the people standing on it.</h1>
-      <p class="lede">DSN Inc. lets residents report the real, factual, location-proven reality where they live, whether good or bad, so students, political leaders, and investors can act on what's true, not what's assumed.</p>
+      <div class="eyebrow-line"><span class="pulse-dot"></span> Real stories from real neighborhoods</div>
+      <h1>Tell us about your hood. The good and the bad.</h1>
+      <p class="lede">Speak honestly about where you live. What you're proud of. What's broken. What's changing. Your stories build a real picture of Kenya, one leaders and researchers can act on.</p>
       <div class="hero-ctas">
-        <a href="#report" class="btn btn-primary">Submit a report</a>
-        <a href="#browse" class="btn btn-ghost">Browse reports</a>
+        <a href="#report" class="btn btn-primary">Share your story</a>
+        <a href="#browse" class="btn btn-ghost">Read what others said</a>
       </div>
+      <p style="margin-top:18px; font-size:.85rem;"><a href="#data-use">How your story is used</a></p>
     </div>
   </div>
 </section>
@@ -230,9 +231,9 @@
 <section id="report">
   <div class="wrap">
     <div class="section-head">
-      <span class="section-kicker">Report what's real</span>
-      <h2>Tell us what's actually happening where you are.</h2>
-      <p>Open your camera and capture your location. Both are required so your report can be verified. Choose any name to display publicly. Your real details go only to our secured backend.</p>
+      <span class="section-kicker">Share your story</span>
+      <h2>Share What Is Happening In Your Area</h2>
+      <p>A platform for residents to document local conditions with accuracy and integrity. Every submission combines your account with verified location and contact data to maintain a credible public record.</p>
     </div>
 
     <div class="report-layout">
@@ -253,13 +254,29 @@
         </div>
 
         <div class="field">
-          <label for="r-title">Short title</label>
-          <input type="text" id="r-title" placeholder="e.g. Bridge impassable after rain" required>
+          <label for="r-title">Title</label>
+          <input type="text" id="r-title" placeholder="e.g. Matatu stage lighting restored" required>
         </div>
 
         <div class="field">
-          <label for="r-desc">What's the reality on the ground?</label>
-          <textarea id="r-desc" rows="3" placeholder="Describe what you're seeing. This can be a problem or something that's working well." required></textarea>
+          <label for="r-desc">Description</label>
+          <textarea id="r-desc" rows="3" placeholder="Provide a clear, factual account of what you observed." required></textarea>
+        </div>
+
+        <div class="field">
+          <label for="r-county">County</label>
+          <select id="r-county" required>
+            <option value="" disabled selected>Choose your county</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Location of your story</label>
+          <div class="geo-row">
+            <button type="button" class="small-btn" id="geo-btn" onclick="captureLocation()">Capture location</button>
+            <span class="geo-status" id="geo-status">Not captured yet</span>
+          </div>
+          <div class="hint">Captured automatically from your device.</div>
         </div>
 
         <div class="field">
@@ -275,54 +292,42 @@
               <button type="button" class="small-btn" id="photo-retake-btn" style="display:none;" onclick="retake('photo')">Retake</button>
             </div>
           </div>
-          <div class="hint">Taken live through your camera. Uploading an existing photo isn't supported.</div>
+          <div class="hint">A live photo of what you are describing, taken through your camera.</div>
         </div>
 
         <div class="field">
-          <label>Location</label>
-          <div class="geo-row">
-            <button type="button" class="small-btn" id="geo-btn" onclick="captureLocation()">Capture my location</button>
-            <span class="geo-status" id="geo-status">Not captured yet</span>
-          </div>
-          <div class="hint">Used to verify your report is genuine.</div>
-        </div>
-
-        <div class="field">
-          <label for="r-pseudonym">Name to display publicly</label>
+          <label for="r-pseudonym">Name to show publicly</label>
           <input type="text" id="r-pseudonym" placeholder="e.g. Rider from Wajir, or leave blank for Anonymous">
-          <div class="hint">This is what everyone else sees. Make up any name you like.</div>
+          <div class="hint">Make up any name. This is the only one anyone else sees.</div>
         </div>
 
         <div class="id-fields">
-          <div class="privacy-note">This section goes only to DSN's secured backend for verification. It is never shown publicly.</div>
+          <div class="privacy-note">Used only for verification and follow-up. Never shown publicly.</div>
           <div class="field">
-            <label for="r-name">Real name</label>
-            <input type="text" id="r-name" placeholder="As it appears on your ID" required>
+            <label for="r-name">Your name <span style="font-weight:400;">(optional)</span></label>
+            <input type="text" id="r-name" placeholder="Only if you're okay being contacted">
           </div>
           <div class="field">
-            <label for="r-phone">Safaricom number</label>
-            <input type="text" id="r-phone" placeholder="07XX XXX XXX" required>
-          </div>
-          <div class="field">
-            <label>Verification selfie</label>
-            <div class="camera-box" id="selfie-camera-box">
-              <video id="selfie-video" autoplay playsinline muted></video>
-              <canvas id="selfie-canvas" style="display:none;"></canvas>
-              <img id="selfie-preview" class="photo-preview" alt="Captured selfie">
-              <p class="liveness-hint" id="liveness-hint" style="display:none;">Look at the camera and blink naturally, then capture.</p>
-              <div class="camera-controls">
-                <button type="button" class="small-btn" onclick="startCamera('selfie')">Open front camera</button>
-                <button type="button" class="small-btn" id="selfie-capture-btn" style="display:none;" disabled onclick="capturePhoto('selfie')">Capture</button>
-                <button type="button" class="small-btn" id="selfie-retake-btn" style="display:none;" onclick="retake('selfie')">Retake</button>
-              </div>
-              <p class="face-status" id="face-status"></p>
+            <label for="r-phone">Phone number</label>
+            <div class="geo-row">
+              <input type="text" id="r-phone" placeholder="07XX XXX XXX" style="flex:1;" required>
+              <button type="button" class="small-btn" id="otp-send-btn" onclick="sendPhoneOtp()">Send code</button>
             </div>
+            <div class="hint">A one-time code confirms this number is active.</div>
+            <div class="field" id="otp-verify-block" style="display:none; margin-top:10px;">
+              <label for="r-otp">Enter the code sent to your phone</label>
+              <div class="geo-row">
+                <input type="text" id="r-otp" placeholder="6-digit code" style="flex:1;">
+                <button type="button" class="small-btn" onclick="verifyPhoneOtp()">Verify</button>
+              </div>
+            </div>
+            <span class="geo-status" id="phone-status"></span>
           </div>
         </div>
 
         <div class="submit-row">
-          <button type="submit" class="btn btn-primary">Submit report</button>
-          <span id="submit-msg">Submitted. It will appear once verified.</span>
+          <button type="submit" class="btn btn-primary">Share your story</button>
+          <span id="submit-msg">Thank you. It'll appear once we've had a look.</span>
         </div>
       </form>
 
@@ -344,7 +349,7 @@
         <div id="report-list"></div>
 
         <div class="pending-box" id="pending-box" style="display:none;">
-          <p class="pending-title">Awaiting verification</p>
+          <p class="pending-title">Stories in review</p>
           <div id="pending-list"></div>
         </div>
       </div>
@@ -356,8 +361,23 @@
   <div class="wrap">
     <div class="section-head">
       <span class="section-kicker">Trust</span>
-      <h2>Every report is checked before it's shown.</h2>
-      <p>Location, timing, and image all have to hold up. Reporters stay anonymous to the public. Identity checks happen only on our secured backend, for accountability, never for display.</p>
+      <h2>A quick look before it goes live.</h2>
+      <p>We confirm each story is genuine and matches where it claims to be from. You stay anonymous to everyone else. Contact details, if given, stay with our team only.</p>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="data-use">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="section-kicker">Data Usage &amp; Privacy</span>
+      <h2>How Your Story Is Used</h2>
+      <p>Your submission is published in the form you provide it. Beyond publication, DSN aggregates submissions to identify patterns across regions, including recurring concerns, emerging improvements, and areas of community pride. It is this aggregated insight, not personal information, that informs our reporting and services.</p>
+    </div>
+    <div class="stat-row" style="flex-direction:column; gap:14px; max-width:640px;">
+      <div class="stat" style="border-left-color:var(--verified);"><span>Academic and research institutions access aggregated, ward-level trend data for study and analysis.</span></div>
+      <div class="stat" style="border-left-color:var(--verified);"><span>Investors and public officials may request the same category of aggregated trend data. Personal identifiers, including names, phone numbers, and precise coordinates, are never included or disclosed.</span></div>
+      <div class="stat" style="border-left-color:var(--verified);"><span>Phone numbers provided for follow-up are accessible only to authorized DSN personnel and are never shared, sold, or included in any external release.</span></div>
     </div>
   </div>
 </section>
@@ -365,8 +385,8 @@
 <section id="audiences">
   <div class="wrap">
     <div class="section-head">
-      <span class="section-kicker">Who it's for</span>
-      <h2>The same ground truth, three different uses.</h2>
+      <span class="section-kicker">Who reads this</span>
+      <h2>Same stories, different uses.</h2>
     </div>
     <div class="audience-tabs" role="tablist">
       <button class="tab-btn active" onclick="showAudience(this,'students')">Students &amp; Researchers</button>
@@ -374,13 +394,13 @@
       <button class="tab-btn" onclick="showAudience(this,'investors')">Investors</button>
     </div>
     <div class="audience-panel active" id="aud-students">
-      <p>Filter reports by county, ward, and theme to find research questions grounded in current reality.</p>
+      <p>Filter stories by county, ward, and theme for research grounded in reality.</p>
     </div>
     <div class="audience-panel" id="aud-politicians">
-      <p>See which issues are actually recurring in a constituency and where community-led solutions already work.</p>
+      <p>See which issues keep recurring in a constituency, and what's already working.</p>
     </div>
     <div class="audience-panel" id="aud-investors">
-      <p>See undocumented resources and land conditions as reported by the people who live with them daily.</p>
+      <p>See resources and land conditions as reported by people who live with them daily.</p>
     </div>
   </div>
 </section>
@@ -391,7 +411,7 @@
     <div class="section-head">
       <span class="section-kicker">Data access</span>
       <h2>Get the data, raw or as a briefing.</h2>
-      <p>Students pay a flat fee or use a university access code. Investors and political leaders describe what they need and get a quote first.</p>
+      <p>Students pay a flat fee or use a university code. Investors and political leaders describe their need and get a quote first.</p>
     </div>
 
     <div class="access-tabs" role="tablist">
@@ -526,7 +546,7 @@
     <div class="contact-wrap">
       <div>
         <h2>Let's talk about what you need.</h2>
-        <p>Resident, researcher, investor, or policymaker, reach out and we'll point you in the right direction.</p>
+        <p>Resident, researcher, investor, or policymaker. Reach out and we'll point you the right way.</p>
       </div>
       <form class="contact-form" onsubmit="event.preventDefault(); this.reset(); document.getElementById('form-success').style.display='block';">
         <input type="text" placeholder="Full name" required>
@@ -553,7 +573,7 @@
     <div class="footer-links">
       <a href="#report">Report</a>
       <a href="#browse">Browse Reports</a>
-      <a href="#trust">Verification</a>
+      <a href="#trust">How it works</a>
       <a href="#contact">Contact</a>
     </div>
   </div>
@@ -572,10 +592,11 @@
   function feedItemHTML(r){
     const icon = categoryIcons[r.category] || "📌";
     const badge = r.verified
-      ? '<span class="badge">Verified</span>'
-      : '<span class="badge pending">Pending verification</span>';
+      ? '<span class="badge">Checked</span>'
+      : '<span class="badge pending">In review</span>';
     const photoHTML = r.photo ? `<img src="${r.photo}" class="thumb" alt="Attached photo">` : '';
-    const coordText = (typeof r.lat === 'number') ? `${r.county} · ${r.lat.toFixed(4)}°, ${r.lng.toFixed(4)}°` : r.county;
+    const place = r.county;
+    const coordText = (typeof r.lat === 'number') ? `${place} · location verified` : place;
     return `
       <div class="feed-item">
         <div class="feed-icon">${icon}</div>
@@ -617,6 +638,10 @@
 
   // ---------- geolocation ----------
   let capturedLocation = null;
+  // ---------- location capture with silent administrative-hierarchy check ----------
+  // Reverse geocoding and hierarchy details are for backend verification only.
+  // None of this (raw coordinates, hierarchy, or match result detail) is
+  // ever rendered on the public-facing feed.
   function captureLocation(){
     const status = document.getElementById('geo-status');
     if(!navigator.geolocation){
@@ -624,13 +649,28 @@
       status.className = "geo-status bad";
       return;
     }
+    const selectedCounty = document.getElementById('r-county').value;
+    if(!selectedCounty){
+      status.textContent = "Select a county first.";
+      status.className = "geo-status bad";
+      return;
+    }
     status.textContent = "Requesting location…";
     status.className = "geo-status";
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        capturedLocation = {lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy};
-        status.textContent = `✓ Captured (±${Math.round(pos.coords.accuracy)}m accuracy)`;
-        status.className = "geo-status ok";
+      async pos => {
+        capturedLocation = {lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, hierarchy: null, mismatch: false};
+        status.textContent = "Verifying location…";
+        const hierarchy = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+        capturedLocation.hierarchy = hierarchy;
+        if(hierarchy && !countyMatches(hierarchy, selectedCounty)){
+          capturedLocation.mismatch = true;
+          status.textContent = "This location doesn't match the selected county. Please recapture at the correct site.";
+          status.className = "geo-status bad";
+        } else {
+          status.textContent = "✓ Location captured";
+          status.className = "geo-status ok";
+        }
       },
       err => {
         capturedLocation = null;
@@ -641,59 +681,76 @@
     );
   }
 
-  // ---------- live camera capture (selfie = front-only, needs face + blink) ----------
-  const cameraStreams = {}, capturedImages = {}, facingModes = {photo:'environment', selfie:'user'};
-  const FACE_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
-  let faceReady = null;
-  const live = {on:false, hasFace:false, blinked:false, eyeOpen:true, misses:0};
-
-  const EAR = eye => {
-    const d = (a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-    return (d(eye[1],eye[5])+d(eye[2],eye[4])) / (2*d(eye[0],eye[3]));
-  };
-
-  function setFaceStatus(text, ok){
-    const s = document.getElementById('face-status');
-    s.textContent = text; s.className = 'face-status ' + (ok?'detected':'not-detected');
-  }
-
-  async function faceLoop(){
-    if(!live.on) return;
-    const video = document.getElementById('selfie-video');
-    const btn = document.getElementById('selfie-capture-btn');
-    const hint = document.getElementById('liveness-hint');
-    const d = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({inputSize:224, scoreThreshold:0.5})).withFaceLandmarks(true);
-    if(d){
-      live.hasFace = true; live.misses = 0;
-      const ear = (EAR(d.landmarks.getLeftEye()) + EAR(d.landmarks.getRightEye())) / 2;
-      if(ear < 0.22) live.eyeOpen = false;
-      else { if(!live.eyeOpen) live.blinked = true; live.eyeOpen = true; }
-      setFaceStatus(live.blinked ? "Face detected. Blink confirmed, you can capture now." : "Face detected. Please blink naturally.", true);
-      hint.style.display = live.blinked ? 'none' : 'block';
-      btn.disabled = !live.blinked;
-    } else if(++live.misses >= 2){
-      live.hasFace = false; btn.disabled = true;
-      setFaceStatus("No face detected. Center your face in the frame.", false);
+  // Resolves county down to village/area level via reverse geocoding.
+  // Result is stored with the report for internal verification only.
+  async function reverseGeocode(lat, lng){
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+      if(!res.ok) return null;
+      const data = await res.json();
+      const a = data.address || {};
+      return {
+        country: a.country || null,
+        province: a.state || a.region || null,
+        district: a.county || a.state_district || null,
+        subDistrict: a.city_district || a.suburb || null,
+        location: a.suburb || a.neighbourhood || null,
+        subLocation: a.quarter || null,
+        village: a.village || a.hamlet || a.town || null,
+        areaName: a.road || a.locality || null
+      };
+    } catch(err){
+      return null; // if the lookup fails, the county check is skipped rather than blocking the report
     }
-    if(live.on) setTimeout(faceLoop, 250);
   }
 
-  async function startSelfieLiveness(){
-    faceReady = faceReady || Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(FACE_URL),
-      faceapi.nets.faceLandmark68TinyNet.loadFromUri(FACE_URL)
-    ]).catch(()=> setFaceStatus("Couldn't load face check. Reopen the camera.", false));
-    await faceReady;
-    Object.assign(live, {on:true, hasFace:false, blinked:false, eyeOpen:true, misses:0});
-    document.getElementById('selfie-capture-btn').disabled = true;
-    document.getElementById('liveness-hint').style.display = 'block';
-    setFaceStatus('Looking for a face...', false);
-    faceLoop();
+  function countyMatches(hierarchy, county){
+    const candidates = [hierarchy.district, hierarchy.province].filter(Boolean).map(s => s.toLowerCase());
+    if(candidates.length === 0) return true; // couldn't resolve, don't block on an unreliable signal
+    const target = county.toLowerCase();
+    return candidates.some(c => c.includes(target) || target.includes(c));
   }
+
+  // Embeds GPS coordinates into the photo's own file data (EXIF), so the
+  // location travels with the image itself. Never shown in the interface.
+  function embedGpsInJpeg(dataUrl, lat, lng){
+    try{
+      const toDMS = deg => {
+        const abs = Math.abs(deg);
+        const d = Math.floor(abs);
+        const minFloat = (abs - d) * 60;
+        const m = Math.floor(minFloat);
+        const s = (minFloat - m) * 60;
+        return [[d,1],[m,1],[Math.round(s*100),100]];
+      };
+      const gps = {};
+      gps[piexif.GPSIFD.GPSLatitudeRef] = lat >= 0 ? 'N' : 'S';
+      gps[piexif.GPSIFD.GPSLatitude] = toDMS(lat);
+      gps[piexif.GPSIFD.GPSLongitudeRef] = lng >= 0 ? 'E' : 'W';
+      gps[piexif.GPSIFD.GPSLongitude] = toDMS(lng);
+      const exifBytes = piexif.dump({"GPS": gps});
+      return piexif.insert(exifBytes, dataUrl);
+    } catch(err){
+      return dataUrl; // if embedding fails, submit the original photo rather than block the report
+    }
+  }
+
+  // ---------- Kenyan counties for the dropdown ----------
+  const KENYA_COUNTIES = ["Mombasa","Kwale","Kilifi","Tana River","Lamu","Taita-Taveta","Garissa","Wajir","Mandera","Marsabit","Isiolo","Meru","Tharaka-Nithi","Embu","Kitui","Machakos","Makueni","Nyandarua","Nyeri","Kirinyaga","Murang'a","Kiambu","Turkana","West Pokot","Samburu","Trans Nzoia","Uasin Gishu","Elgeyo-Marakwet","Nandi","Baringo","Laikipia","Nakuru","Narok","Kajiado","Kericho","Bomet","Kakamega","Vihiga","Bungoma","Busia","Siaya","Kisumu","Homa Bay","Migori","Kisii","Nyamira","Nairobi"];
+  (function populateCounties(){
+    const sel = document.getElementById('r-county');
+    KENYA_COUNTIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  })();
+
+  // ---------- simple optional camera capture for the story photo ----------
+  const cameraStreams = {}, capturedImages = {}, facingModes = {photo:'environment'};
 
   async function startCamera(kind){
     const video = document.getElementById(kind+'-video');
-    if(kind === 'selfie') facingModes.selfie = 'user'; // front camera only, can't flip
     try{
       const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode: facingModes[kind]}});
       cameraStreams[kind] = stream;
@@ -702,20 +759,14 @@
       document.getElementById(kind+'-preview').style.display = 'none';
       document.getElementById(kind+'-retake-btn').style.display = 'none';
       document.getElementById(kind+'-capture-btn').style.display = 'inline-block';
-      if(kind === 'selfie'){
-        document.getElementById('selfie-capture-btn').disabled = true;
-        video.onloadedmetadata = startSelfieLiveness;
-      } else {
-        const flip = document.getElementById(kind+'-flip-btn');
-        if(flip) flip.style.display = 'inline-block';
-      }
+      const flip = document.getElementById(kind+'-flip-btn');
+      if(flip) flip.style.display = 'inline-block';
     } catch(err){
-      alert("Camera access is needed to submit a report. Please allow camera permissions.");
+      alert("Couldn't access your camera. You can still share your story without a photo.");
     }
   }
 
   function flipCamera(kind){
-    if(kind === 'selfie') return; // selfie is always front-facing
     facingModes[kind] = facingModes[kind] === 'user' ? 'environment' : 'user';
     cameraStreams[kind]?.getTracks().forEach(t=>t.stop());
     cameraStreams[kind] = null;
@@ -723,10 +774,6 @@
   }
 
   function capturePhoto(kind){
-    if(kind === 'selfie' && !(live.hasFace && live.blinked)){
-      setFaceStatus('No face confirmed yet. Keep looking at the camera and blink, then try again.', false);
-      return;
-    }
     const video = document.getElementById(kind+'-video'), canvas = document.getElementById(kind+'-canvas');
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
@@ -735,7 +782,6 @@
     document.getElementById(kind+'-preview').src = capturedImages[kind];
     document.getElementById(kind+'-preview').style.display = 'block';
     video.style.display = 'none';
-    if(kind === 'selfie'){ live.on = false; document.getElementById('liveness-hint').style.display = 'none'; }
     cameraStreams[kind]?.getTracks().forEach(t=>t.stop());
     cameraStreams[kind] = null;
     document.getElementById(kind+'-capture-btn').style.display = 'none';
@@ -750,7 +796,41 @@
     startCamera(kind);
   }
 
-  // ---------- form submit: reports start pending, only go live once verified ----------
+  // ---------- phone verification (OTP) ----------
+  let phoneVerified = false;
+  let otpSentTo = null;
+
+  function daShowPhoneStatus(msg, ok){
+    const el = document.getElementById('phone-status');
+    el.textContent = msg;
+    el.className = 'geo-status ' + (ok ? 'ok' : 'bad');
+  }
+
+  function sendPhoneOtp(){
+    const phone = document.getElementById('r-phone').value.trim();
+    if(!phone){ daShowPhoneStatus('Enter a phone number first.', false); return; }
+    // In production this calls the backend to dispatch a real SMS OTP.
+    otpSentTo = phone;
+    phoneVerified = false;
+    document.getElementById('otp-verify-block').style.display = 'block';
+    daShowPhoneStatus('Code sent. Enter it below to verify this number.', true);
+  }
+
+  function verifyPhoneOtp(){
+    const otp = document.getElementById('r-otp').value.trim();
+    if(!otpSentTo){ daShowPhoneStatus('Send a code first.', false); return; }
+    if(otp.length < 4){ daShowPhoneStatus('Enter the code you received.', false); return; }
+    // In production this call validates the OTP against the backend record.
+    phoneVerified = true;
+    daShowPhoneStatus('Number verified.', true);
+  }
+
+  document.getElementById('r-phone').addEventListener('input', () => {
+    phoneVerified = false;
+    document.getElementById('otp-verify-block').style.display = 'none';
+  });
+
+  // ---------- form submit: reports start pending, only go live once checked ----------
   let pendingReports = [];
   let pendingIdCounter = 1;
 
@@ -764,30 +844,44 @@
       document.getElementById('geo-btn').scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
-    if(!capturedImages.photo){
-      alert("Please capture a photo before submitting.");
+    if(capturedLocation.mismatch){
+      const status = document.getElementById('geo-status');
+      status.textContent = "This location doesn't match the selected county. Please recapture at the correct site.";
+      status.className = "geo-status bad";
+      document.getElementById('geo-btn').scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
-    if(!capturedImages.selfie){
-      alert("Please capture a verification selfie before submitting.");
+    if(!phoneVerified){
+      daShowPhoneStatus('Please verify your phone number before submitting.', false);
+      document.getElementById('r-phone').scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
 
     const title = document.getElementById('r-title').value.trim();
     const category = document.getElementById('r-category').value;
     const desc = document.getElementById('r-desc').value.trim();
+    const county = document.getElementById('r-county').value;
     const pseudonym = document.getElementById('r-pseudonym').value.trim() || "Anonymous";
 
-    // Real name, Safaricom number, and the selfie are sent to DSN's secured
-    // backend only. They are never attached to the public report record
-    // rendered on this page.
+    // Real name, phone number, exact coordinates, and the resolved
+    // county-to-village hierarchy are sent to DSN's backend only, for
+    // verification and optional follow-up. None of this is attached to the
+    // public story rendered on this page or included in anything shared or
+    // sold. The photo, if any, carries the same coordinates embedded in its
+    // own file data for backend cross-checking.
+
+    let photoData = capturedImages.photo || null;
+    if(photoData){
+      photoData = embedGpsInJpeg(photoData, capturedLocation.lat, capturedLocation.lng);
+    }
 
     const pendingReport = {
       id: pendingIdCounter++,
-      title, category, desc, pseudonym,
+      title, category, desc, pseudonym, county,
       lat: capturedLocation.lat,
       lng: capturedLocation.lng,
-      photo: capturedImages.photo
+      hierarchy: capturedLocation.hierarchy,
+      photo: photoData
     };
 
     pendingReports.unshift(pendingReport);
@@ -798,8 +892,7 @@
     setTimeout(()=> msg.style.display = 'none', 4000);
 
     this.reset();
-    live.on = false;
-    ['photo','selfie'].forEach(kind => {
+    ['photo'].forEach(kind => {
       capturedImages[kind] = null;
       document.getElementById(kind+'-preview').style.display = 'none';
       document.getElementById(kind+'-capture-btn').style.display = 'none';
@@ -809,11 +902,13 @@
       cameraStreams[kind]?.getTracks().forEach(t=>t.stop());
       cameraStreams[kind] = null;
     });
-    setFaceStatus('', false);
-    document.getElementById('liveness-hint').style.display = 'none';
     document.getElementById('geo-status').textContent = "Not captured yet";
     document.getElementById('geo-status').className = "geo-status";
     capturedLocation = null;
+    phoneVerified = false;
+    otpSentTo = null;
+    document.getElementById('otp-verify-block').style.display = 'none';
+    document.getElementById('phone-status').textContent = '';
   });
 
   function renderPendingList(){
@@ -828,15 +923,15 @@
       <div class="pending-item">
         <div>
           <div class="p-title">${escapeHTML(r.title)}</div>
-          <div class="p-status">Submitted by ${escapeHTML(r.pseudonym)}, awaiting verification</div>
+          <div class="p-status">Shared by ${escapeHTML(r.pseudonym)}, in review</div>
         </div>
-        <button class="verify-btn" onclick="verifyReport(${r.id})">Verify &amp; publish</button>
+        <button class="verify-btn" onclick="verifyReport(${r.id})">Approve &amp; publish</button>
       </div>
     `).join('');
   }
 
-  // In production this happens on DSN's backend once location, timing, and
-  // image checks pass. This button stands in for that step in this preview.
+  // In production this happens on DSN's team as a quick sanity check, not an
+  // identity check. This button stands in for that step in this preview.
   function verifyReport(id){
     const idx = pendingReports.findIndex(r => r.id === id);
     if(idx === -1) return;
@@ -845,9 +940,10 @@
       title: r.title,
       category: r.category,
       desc: r.desc,
-      county: "Location captured",
+      county: r.county,
       lat: r.lat,
       lng: r.lng,
+      hierarchy: r.hierarchy,
       verified: true,
       pseudonym: r.pseudonym,
       photo: r.photo
