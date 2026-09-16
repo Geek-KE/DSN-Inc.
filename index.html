@@ -80,6 +80,11 @@
 
   /* REPORT FORM */
   .report-layout{display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:flex-start;}
+  #report{padding:96px 0 120px;}
+  #report .section-head{max-width:760px;}
+  #report .section-head h2{font-size:clamp(2rem,3.2vw,2.7rem);}
+  #report .section-kicker{font-size:1rem; letter-spacing:.06em;}
+  .report-form{background:#fff; border-radius:20px; padding:36px; box-shadow:var(--shadow);}
   .report-form{border-right:1px solid var(--line); padding-right:48px;}
   .field{margin-bottom:18px;}
   .field label{display:block; font-size:.85rem; font-weight:600; color:var(--ink); margin-bottom:6px;}
@@ -384,6 +389,23 @@
             </div>
           </div>
           <div class="hint">A live photo of what you are describing, taken through your camera.</div>
+        </div>
+
+        <div class="field">
+          <label>Video (optional)</label>
+          <div class="camera-box" id="video-camera-box">
+            <video id="video-video" autoplay playsinline muted></video>
+            <video id="video-preview" class="photo-preview" style="display:none;" controls></video>
+            <div class="camera-controls">
+              <button type="button" class="small-btn" onclick="startVideoCamera()">Open camera</button>
+              <button type="button" class="small-btn" id="video-record-btn" style="display:none;" onclick="startRecording()">Record</button>
+              <button type="button" class="small-btn" id="video-stop-btn" style="display:none;" onclick="stopRecording()">Stop</button>
+              <button type="button" class="small-btn" id="video-flip-btn" style="display:none;" onclick="flipVideoCamera()">Flip camera</button>
+              <button type="button" class="small-btn" id="video-retake-btn" style="display:none;" onclick="retakeVideo()">Retake</button>
+            </div>
+            <div class="hint" id="video-timer" style="display:none;"></div>
+          </div>
+          <div class="hint">A short clip (up to 30 seconds) showing what you are describing.</div>
         </div>
 
         <div class="field">
@@ -948,6 +970,81 @@
     startCamera(kind);
   }
 
+  // ---------- optional video recording for the story ----------
+  let videoStream = null, mediaRecorder = null, recordedChunks = [], capturedVideoBlob = null;
+  let videoFacingMode = 'environment', recordTimerInterval = null;
+
+  async function startVideoCamera(){
+    const video = document.getElementById('video-video');
+    try{
+      videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: videoFacingMode }, audio: true });
+      video.srcObject = videoStream;
+      video.style.display = 'block';
+      document.getElementById('video-preview').style.display = 'none';
+      document.getElementById('video-retake-btn').style.display = 'none';
+      document.getElementById('video-record-btn').style.display = 'inline-block';
+      document.getElementById('video-flip-btn').style.display = 'inline-block';
+    } catch(err){
+      alert("Couldn't access your camera/microphone. You can still share your story without a video.");
+    }
+  }
+
+  function flipVideoCamera(){
+    videoFacingMode = videoFacingMode === 'user' ? 'environment' : 'user';
+    videoStream?.getTracks().forEach(t=>t.stop());
+    videoStream = null;
+    startVideoCamera();
+  }
+
+  function startRecording(){
+    if(!videoStream) return;
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(videoStream, { mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm' });
+    mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      capturedVideoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(capturedVideoBlob);
+      const preview = document.getElementById('video-preview');
+      preview.src = url;
+      preview.style.display = 'block';
+      document.getElementById('video-video').style.display = 'none';
+      videoStream?.getTracks().forEach(t=>t.stop());
+      videoStream = null;
+      document.getElementById('video-record-btn').style.display = 'none';
+      document.getElementById('video-stop-btn').style.display = 'none';
+      document.getElementById('video-flip-btn').style.display = 'none';
+      document.getElementById('video-retake-btn').style.display = 'inline-block';
+      document.getElementById('video-timer').style.display = 'none';
+    };
+    mediaRecorder.start();
+    document.getElementById('video-record-btn').style.display = 'none';
+    document.getElementById('video-stop-btn').style.display = 'inline-block';
+    document.getElementById('video-flip-btn').style.display = 'none';
+
+    let seconds = 0;
+    const timerEl = document.getElementById('video-timer');
+    timerEl.style.display = 'block';
+    timerEl.textContent = '0:00';
+    recordTimerInterval = setInterval(() => {
+      seconds++;
+      const m = Math.floor(seconds / 60), s = String(seconds % 60).padStart(2, '0');
+      timerEl.textContent = `${m}:${s}`;
+      if(seconds >= 30) stopRecording();
+    }, 1000);
+  }
+
+  function stopRecording(){
+    clearInterval(recordTimerInterval);
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  }
+
+  function retakeVideo(){
+    capturedVideoBlob = null;
+    document.getElementById('video-preview').style.display = 'none';
+    document.getElementById('video-retake-btn').style.display = 'none';
+    startVideoCamera();
+  }
+
   // ---------- email verification (OTP) ----------
   let emailVerified = false;
   let otpSentTo = null;
@@ -1047,6 +1144,14 @@
         photoUrl = supabase.storage.from('report-photos').getPublicUrl(path).data.publicUrl;
       }
 
+      let videoUrl = null;
+      if(capturedVideoBlob){
+        const path = `${crypto.randomUUID()}.webm`;
+        const { error: vidErr } = await supabase.storage.from('report-videos').upload(path, capturedVideoBlob, { contentType: 'video/webm' });
+        if(vidErr) throw vidErr;
+        videoUrl = supabase.storage.from('report-videos').getPublicUrl(path).data.publicUrl;
+      }
+
       const { error: insertErr } = await supabase.from('reports').insert({
         title, category, description: desc, pseudonym, county,
         phone: document.getElementById('r-phone').value.trim(),
@@ -1056,6 +1161,7 @@
         hierarchy: capturedLocation.hierarchy,
         county_mismatch: !!capturedLocation.mismatch,
         photo_url: photoUrl,
+        video_url: videoUrl,
         verified: false
       });
       if(insertErr) throw insertErr;
@@ -1076,6 +1182,16 @@
         cameraStreams[kind]?.getTracks().forEach(t=>t.stop());
         cameraStreams[kind] = null;
       });
+      capturedVideoBlob = null;
+      document.getElementById('video-preview').style.display = 'none';
+      document.getElementById('video-preview').removeAttribute('src');
+      document.getElementById('video-record-btn').style.display = 'none';
+      document.getElementById('video-stop-btn').style.display = 'none';
+      document.getElementById('video-flip-btn').style.display = 'none';
+      document.getElementById('video-retake-btn').style.display = 'none';
+      document.getElementById('video-video').style.display = 'none';
+      videoStream?.getTracks().forEach(t=>t.stop());
+      videoStream = null;
       document.getElementById('geo-status').textContent = "Not captured yet";
       document.getElementById('geo-status').className = "geo-status";
       capturedLocation = null;
@@ -1447,6 +1563,7 @@
 
   function adminCardHTML(r, mode){
     const photoHTML = r.photo_url ? `<img src="${r.photo_url}" class="admin-thumb" alt="Attached photo">` : '';
+    const videoHTML = r.video_url ? `<video src="${r.video_url}" class="admin-thumb" controls style="max-width:100%;"></video>` : '';
     const when = r.created_at ? new Date(r.created_at).toLocaleString() : '';
     const actionsHTML = mode === 'pending'
       ? `<button class="admin-approve-btn" onclick="adminAct('${r.id}', 'approve')">Approve</button>
@@ -1461,7 +1578,7 @@
         </div>
         <div class="admin-card-desc">${escapeHTML(r.description)}</div>
         ${photoHTML}
-        <div class="admin-meta-row">
+        ${videoHTML}
           <span><b>County:</b> ${escapeHTML(r.county || '—')}</span>
           <span><b>Reported by:</b> ${escapeHTML(r.pseudonym || 'Anonymous')}</span>
           <span><b>Phone:</b> ${escapeHTML(r.phone || '—')}</span>
