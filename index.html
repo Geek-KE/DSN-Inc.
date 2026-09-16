@@ -400,19 +400,23 @@
           </div>
           <div class="field">
             <label for="r-phone">Phone number</label>
+            <input type="text" id="r-phone" placeholder="07XX XXX XXX" style="flex:1;" required>
+          </div>
+          <div class="field">
+            <label for="r-email">Email address</label>
             <div class="geo-row">
-              <input type="text" id="r-phone" placeholder="07XX XXX XXX" style="flex:1;" required>
-              <button type="button" class="small-btn" id="otp-send-btn" onclick="sendPhoneOtp()">Send code</button>
+              <input type="email" id="r-email" placeholder="you@example.com" style="flex:1;" required>
+              <button type="button" class="small-btn" id="otp-send-btn" onclick="sendEmailOtp()">Send code</button>
             </div>
-            <div class="hint">A one-time code confirms this number is active.</div>
+            <div class="hint">A one-time code confirms this email is active.</div>
             <div class="field" id="otp-verify-block" style="display:none; margin-top:10px;">
-              <label for="r-otp">Enter the code sent to your phone</label>
+              <label for="r-otp">Enter the code sent to your email</label>
               <div class="geo-row">
                 <input type="text" id="r-otp" placeholder="6-digit code" style="flex:1;">
-                <button type="button" class="small-btn" onclick="verifyPhoneOtp()">Verify</button>
+                <button type="button" class="small-btn" onclick="verifyEmailOtp()">Verify</button>
               </div>
             </div>
-            <span class="geo-status" id="phone-status"></span>
+            <span class="geo-status" id="email-status"></span>
           </div>
         </div>
 
@@ -944,47 +948,47 @@
     startCamera(kind);
   }
 
-  // ---------- phone verification (OTP) ----------
-  let phoneVerified = false;
+  // ---------- email verification (OTP) ----------
+  let emailVerified = false;
   let otpSentTo = null;
 
   function daShowPhoneStatus(msg, ok){
-    const el = document.getElementById('phone-status');
+    const el = document.getElementById('email-status');
     el.textContent = msg;
     el.className = 'geo-status ' + (ok ? 'ok' : 'bad');
   }
 
-  async function sendPhoneOtp(){
-    const phone = document.getElementById('r-phone').value.trim();
-    if(!phone){ daShowPhoneStatus('Enter a phone number first.', false); return; }
+  async function sendEmailOtp(){
+    const email = document.getElementById('r-email').value.trim();
+    if(!email){ daShowPhoneStatus('Enter an email address first.', false); return; }
     daShowPhoneStatus('Sending code…', true);
     try{
-      await callFn('send-otp', { phone, purpose: 'report_submit' });
-      otpSentTo = phone;
-      phoneVerified = false;
+      await callFn('send-otp', { email, purpose: 'report_submit' });
+      otpSentTo = email;
+      emailVerified = false;
       document.getElementById('otp-verify-block').style.display = 'block';
-      daShowPhoneStatus('Code sent. Enter it below to verify this number.', true);
+      daShowPhoneStatus('Code sent. Enter it below to verify this email.', true);
     } catch(err){
       daShowPhoneStatus(err.message || 'Could not send code. Try again.', false);
     }
   }
 
-  async function verifyPhoneOtp(){
+  async function verifyEmailOtp(){
     const otp = document.getElementById('r-otp').value.trim();
     if(!otpSentTo){ daShowPhoneStatus('Send a code first.', false); return; }
     if(otp.length < 4){ daShowPhoneStatus('Enter the code you received.', false); return; }
     try{
-      await callFn('verify-otp', { phone: otpSentTo, purpose: 'report_submit', otp });
-      phoneVerified = true;
-      daShowPhoneStatus('Number verified.', true);
+      await callFn('verify-otp', { email: otpSentTo, purpose: 'report_submit', otp });
+      emailVerified = true;
+      daShowPhoneStatus('Email verified.', true);
     } catch(err){
-      phoneVerified = false;
+      emailVerified = false;
       daShowPhoneStatus(err.message || 'Incorrect code.', false);
     }
   }
 
-  document.getElementById('r-phone').addEventListener('input', () => {
-    phoneVerified = false;
+  document.getElementById('r-email').addEventListener('input', () => {
+    emailVerified = false;
     document.getElementById('otp-verify-block').style.display = 'none';
   });
 
@@ -1006,9 +1010,9 @@
       document.getElementById('geo-btn').scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
-    if(!phoneVerified){
-      daShowPhoneStatus('Please verify your phone number before submitting.', false);
-      document.getElementById('r-phone').scrollIntoView({behavior:'smooth', block:'center'});
+    if(!emailVerified){
+      daShowPhoneStatus('Please verify your email address before submitting.', false);
+      document.getElementById('r-email').scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
 
@@ -1046,6 +1050,7 @@
       const { error: insertErr } = await supabase.from('reports').insert({
         title, category, description: desc, pseudonym, county,
         phone: document.getElementById('r-phone').value.trim(),
+        email: document.getElementById('r-email').value.trim(),
         lat: capturedLocation.lat, lng: capturedLocation.lng,
         accuracy: capturedLocation.accuracy,
         hierarchy: capturedLocation.hierarchy,
@@ -1074,10 +1079,10 @@
       document.getElementById('geo-status').textContent = "Not captured yet";
       document.getElementById('geo-status').className = "geo-status";
       capturedLocation = null;
-      phoneVerified = false;
+      emailVerified = false;
       otpSentTo = null;
       document.getElementById('otp-verify-block').style.display = 'none';
-      document.getElementById('phone-status').textContent = '';
+      document.getElementById('email-status').textContent = '';
     } catch(err){
       daShowPhoneStatus(err.message || 'Could not submit. Try again.', false);
     } finally {
@@ -1262,7 +1267,7 @@
     }
   }
 
-  let daRedeemedCodeId = null, daRedeemedPhone = null, daRedeemedAccessCodeId = null, daRedeemedAccessCodeCount = 0;
+  let daRedeemedCodeId = null, daRedeemedEmail = null, daRedeemedAccessCodeId = null, daRedeemedAccessCodeCount = 0;
   async function daRedeemCode(){
     const code = document.getElementById('c-code').value.trim();
     const phone = document.getElementById('c-phone').value.trim();
@@ -1279,12 +1284,12 @@
         .from('code_redemptions').insert({ access_code_id: codeRow.id, phone, email }).select().single();
       if(redErr) throw redErr;
 
-      await callFn('send-otp', { phone, purpose: 'access_code', referenceId: redemption.id });
+      await callFn('send-otp', { email, purpose: 'access_code', referenceId: redemption.id });
       daRedeemedCodeId = redemption.id;
-      daRedeemedPhone = phone;
+      daRedeemedEmail = email;
       daRedeemedAccessCodeId = codeRow.id;
       daRedeemedAccessCodeCount = codeRow.redemptions;
-      daShowStatus('code-status', 'Code sent. Enter it below to verify this number.', true);
+      daShowStatus('code-status', 'Code sent. Enter it below to verify this email.', true);
       document.getElementById('otp-block').style.display = 'block';
     } catch(err){
       daShowStatus('code-status', err.message || 'Could not reach the access service. Try again shortly.', false);
@@ -1299,7 +1304,7 @@
       // and confirm_code_redemption() in mtaa_pulse_schema.sql. The browser
       // has no ability to call that function directly.
       await callFn('verify-otp', {
-        phone: daRedeemedPhone,
+        email: daRedeemedEmail,
         purpose: 'access_code',
         otp,
         referenceId: daRedeemedCodeId
@@ -1328,7 +1333,7 @@
   // stays 'pending_review' until your team confirms the payment landed) —
   // wiring automatic verification needs Daraja (M-Pesa) and/or Paystack
   // webhooks, which are separate from Supabase/OTP.
-  let daPaymentVerificationId = null, daPaymentPhone = null;
+  let daPaymentVerificationId = null, daPaymentEmail = null;
   async function daVerifyPayment(){
     const code = document.getElementById('p-code').value.trim();
     const ref = document.getElementById('p-ref').value.trim();
@@ -1339,9 +1344,9 @@
       const { data, error } = await supabase.from('payment_verifications')
         .insert({ code: code || null, card_or_mpesa_ref: ref, phone, email }).select().single();
       if(error) throw error;
-      await callFn('send-otp', { phone, purpose: 'access_payment', referenceId: data.id });
+      await callFn('send-otp', { email, purpose: 'access_payment', referenceId: data.id });
       daPaymentVerificationId = data.id;
-      daPaymentPhone = phone;
+      daPaymentEmail = email;
       daShowStatus('payment-status', 'Payment logged for review. Code sent \u2014 enter it below.', true);
       document.getElementById('p-otp-block').style.display = 'block';
     } catch(err){
@@ -1352,8 +1357,8 @@
   async function daVerifyPaymentOtp(){
     const otp = document.getElementById('p-otp').value.trim();
     try{
-      await callFn('verify-otp', { phone: daPaymentPhone, purpose: 'access_payment', otp });
-      daShowStatus('payment-status', 'Number verified. Our team will confirm your payment and follow up by email.', true);
+      await callFn('verify-otp', { email: daPaymentEmail, purpose: 'access_payment', otp });
+      daShowStatus('payment-status', 'Email verified. Our team will confirm your payment and follow up by email.', true);
     } catch(err){
       daShowStatus('payment-status', err.message || 'Incorrect code.', false);
     }
@@ -1365,7 +1370,7 @@
   // `window` here is what fixes the "X is not defined" console errors.
   // ---------- Admin panel (hidden, reached via #admin) ----------
   let adminToken = localStorage.getItem('mtaa_admin_token') || null;
-  let adminPhoneForOtp = '';
+  let adminEmailForOtp = '';
 
   function showAdminOverlay(){
     document.getElementById('admin-overlay').style.display = 'block';
@@ -1389,17 +1394,17 @@
   }
 
   async function adminSendCode(){
-    const phone = document.getElementById('admin-phone').value.trim();
+    const email = document.getElementById('admin-email').value.trim();
     const errEl = document.getElementById('admin-phone-err');
     errEl.style.display = 'none';
-    if(!phone) return;
+    if(!email) return;
     try{
-      await callFn('send-otp', { phone, purpose: 'admin_login' });
-      adminPhoneForOtp = phone;
+      await callFn('send-otp', { email, purpose: 'admin_login' });
+      adminEmailForOtp = email;
       document.getElementById('admin-step-phone').style.display = 'none';
       document.getElementById('admin-step-otp').style.display = 'block';
       const info = document.getElementById('admin-otp-info');
-      info.textContent = 'Code sent. Check your phone.';
+      info.textContent = 'Code sent. Check your email.';
       info.style.display = 'block';
     } catch(err){
       errEl.textContent = err.message || 'Could not send code.';
@@ -1413,7 +1418,7 @@
     errEl.style.display = 'none';
     if(!otp) return;
     try{
-      const data = await callFn('verify-otp', { phone: adminPhoneForOtp, purpose: 'admin_login', otp });
+      const data = await callFn('verify-otp', { email: adminEmailForOtp, purpose: 'admin_login', otp });
       adminToken = data.token;
       localStorage.setItem('mtaa_admin_token', adminToken);
       adminShowApp();
@@ -1436,7 +1441,7 @@
     document.getElementById('admin-login-box').style.display = 'block';
     document.getElementById('admin-step-otp').style.display = 'none';
     document.getElementById('admin-step-phone').style.display = 'block';
-    document.getElementById('admin-phone').value = '';
+    document.getElementById('admin-email').value = '';
     document.getElementById('admin-otp').value = '';
   }
 
@@ -1519,8 +1524,8 @@
     flipCamera,
     capturePhoto,
     retake,
-    sendPhoneOtp,
-    verifyPhoneOtp,
+    sendEmailOtp,
+    verifyEmailOtp,
     switchMapTab,
     openMapModal,
     closeMapModal,
@@ -1546,14 +1551,14 @@
       <p class="admin-sub">Mtaa Pulse report review</p>
 
       <div id="admin-step-phone">
-        <label for="admin-phone">Admin phone number</label>
-        <input type="tel" id="admin-phone" placeholder="" autocomplete="off" onkeydown="if(event.key==='Enter') adminSendCode()">
+        <label for="admin-email">Admin email address</label>
+        <input type="email" id="admin-email" placeholder="" autocomplete="off" onkeydown="if(event.key==='Enter') adminSendCode()">
         <p class="admin-err" id="admin-phone-err"></p>
         <button onclick="adminSendCode()">Send code</button>
       </div>
 
       <div id="admin-step-otp" style="display:none;">
-        <label for="admin-otp">Enter the code sent to your phone</label>
+        <label for="admin-otp">Enter the code sent to your email</label>
         <input type="text" id="admin-otp" inputmode="numeric" placeholder="6-digit code" onkeydown="if(event.key==='Enter') adminVerifyCode()">
         <p class="admin-err" id="admin-otp-err"></p>
         <p class="admin-info" id="admin-otp-info"></p>
