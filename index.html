@@ -278,6 +278,10 @@
     padding:18px 20px; margin-bottom:16px;
   }
   .admin-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+  .admin-card-headline{cursor:pointer; margin-bottom:2px;}
+  .admin-card-headline:hover .admin-card-title{text-decoration:underline;}
+  .admin-card-sub{font-size:.78rem; color:var(--ink-soft); cursor:pointer; margin-bottom:6px;}
+  .admin-card-body{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);}
   .admin-card-title{font-weight:700; font-size:1rem;}
   .admin-badge-cat{
     font-size:.72rem; font-weight:700; color:var(--warn); background:var(--warn-bg);
@@ -921,24 +925,7 @@
         <fieldset class="wiz-step" data-step="3">
           <legend class="wiz-legend">Show us what you see</legend>
           <div class="field">
-            <label>Photo</label>
-            <div class="camera-box" id="photo-camera-box">
-              <video id="photo-video" autoplay playsinline muted></video>
-              <canvas id="photo-canvas" style="display:none;"></canvas>
-              <img id="photo-preview" class="photo-preview" alt="Captured photo">
-              <div class="camera-controls">
-                <button type="button" class="small-btn" onclick="startCamera('photo')">Open camera</button>
-                <button type="button" class="small-btn" id="photo-capture-btn" style="display:none;" onclick="capturePhoto('photo')">Capture</button>
-                <button type="button" class="small-btn" id="photo-flip-btn" style="display:none;" onclick="flipCamera('photo')">Flip camera</button>
-                <button type="button" class="small-btn" id="photo-retake-btn" style="display:none;" onclick="retake('photo')">Retake</button>
-              </div>
-              <p class="cam-error" id="photo-cam-error"></p>
-            </div>
-            <div class="hint">A live photo of what you are describing, taken through your camera.</div>
-          </div>
-
-          <div class="field">
-            <label>Video (optional)</label>
+            <label>Video</label>
             <div class="camera-box" id="video-camera-box">
               <video id="video-video" autoplay playsinline muted></video>
               <video id="video-preview" class="photo-preview" style="display:none;" controls playsinline></video>
@@ -952,7 +939,24 @@
               <div class="rec-timer" id="video-timer" style="display:none;"><span class="rec-dot"></span><span id="video-timer-text">0:00</span></div>
               <p class="cam-error" id="video-cam-error"></p>
             </div>
-            <div class="hint">A short clip (up to 30 seconds) showing what you are describing.</div>
+            <div class="hint">Required. A short clip, up to 30 seconds, showing what you are describing. Hold your phone <b>sideways (landscape)</b> while recording — upright/portrait clips will be rejected.</div>
+          </div>
+
+          <div class="field">
+            <label>Photo (optional)</label>
+            <div class="camera-box" id="photo-camera-box">
+              <video id="photo-video" autoplay playsinline muted></video>
+              <canvas id="photo-canvas" style="display:none;"></canvas>
+              <img id="photo-preview" class="photo-preview" alt="Captured photo">
+              <div class="camera-controls">
+                <button type="button" class="small-btn" onclick="startCamera('photo')">Open camera</button>
+                <button type="button" class="small-btn" id="photo-capture-btn" style="display:none;" onclick="capturePhoto('photo')">Capture</button>
+                <button type="button" class="small-btn" id="photo-flip-btn" style="display:none;" onclick="flipCamera('photo')">Flip camera</button>
+                <button type="button" class="small-btn" id="photo-retake-btn" style="display:none;" onclick="retake('photo')">Retake</button>
+              </div>
+              <p class="cam-error" id="photo-cam-error"></p>
+            </div>
+            <div class="hint">A live photo of what you are describing, taken through your camera.</div>
           </div>
         </fieldset>
 
@@ -1770,11 +1774,16 @@
     }
     try{
       try{
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:{ideal: videoFacingMode} }, audio: true });
+        videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode:{ideal: videoFacingMode}, width:{ideal:1280}, height:{ideal:720}, aspectRatio:{ideal:16/9} },
+          audio: true
+        });
       } catch(inner){
         // some devices refuse the audio track or the facing mode - fall back step by step
         try{
-          videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { width:{ideal:1280}, height:{ideal:720}, aspectRatio:{ideal:16/9} }, audio: true
+          });
         } catch(inner2){
           videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
@@ -1827,6 +1836,17 @@
       document.getElementById('video-open-btn').style.display = 'none';
       document.getElementById('video-retake-btn').style.display = 'inline-block';
       document.getElementById('video-timer').style.display = 'none';
+
+      // Reject portrait clips - the recording must be landscape.
+      preview.onloadedmetadata = () => {
+        if(preview.videoHeight > preview.videoWidth){
+          camError('video', 'That was recorded upright (portrait). Please rotate your phone sideways to landscape and record again.');
+          capturedVideoBlob = null;
+          preview.pause?.();
+          preview.style.display = 'none';
+          preview.removeAttribute('src');
+        }
+      };
     };
     mediaRecorder.start();
     document.getElementById('video-record-btn').style.display = 'none';
@@ -1930,6 +1950,12 @@
       daShowPhoneStatus('Please verify your email address before submitting.', false);
       wizGo(4);
       document.getElementById('r-email').scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    if(!capturedVideoBlob){
+      camError('video', 'A short landscape video (up to 30 seconds) is required before you can submit.');
+      wizGo(3);
+      document.getElementById('video-camera-box').scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
 
@@ -2601,12 +2627,8 @@
       if(capturedLocation.mismatch) return 'The captured location does not match the county you picked. Recapture at the correct site.';
     }
     if(n === 3){
-      // A photo is what makes a story checkable, so we ask twice - but we
-      // never trap someone who genuinely cannot take one.
-      if(!capturedImages.photo && !photoNudged){
-        photoNudged = true;
-        return 'A photo is what makes your story verifiable. Take one if you can. Or tap Continue again to carry on without it.';
-      }
+      // A video is required for a story to be checkable; a photo is a nice-to-have extra.
+      if(!capturedVideoBlob) return 'A short landscape video (up to 30 seconds) is required for your story.';
     }
     if(n === 4){
       if(v('r-phone').replace(/\D/g,'').length < 9) return 'Enter a phone number we can reach you on.';
@@ -2938,24 +2960,36 @@
          <button class="admin-delete-btn" onclick="adminAct('${r.id}', 'delete')">Delete</button>`;
     return `
       <div class="admin-card" id="admin-card-${r.id}">
-        <div class="admin-card-top">
+        <div class="admin-card-top admin-card-headline" role="button" tabindex="0"
+             onclick="adminToggleCard('${r.id}')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();adminToggleCard('${r.id}');}">
           <div class="admin-card-title">${escapeHTML(r.title)}</div>
           <span class="admin-badge-cat">${escapeHTML(r.category || 'Other')}</span>
         </div>
-        <div class="admin-card-desc">${escapeHTML(r.description)}</div>
-        ${photoHTML}
-        ${videoHTML}
-          <span><b>County:</b> ${escapeHTML(r.county || ',')}</span>
-          <span><b>Reported by:</b> ${escapeHTML(r.pseudonym || 'Anonymous')}</span>
-          <span><b>Phone:</b> ${escapeHTML(r.phone || ',')}</span>
-          <span><b>Submitted:</b> ${when}</span>
+        <div class="admin-card-sub" onclick="adminToggleCard('${r.id}')">${escapeHTML(r.county || '')}${r.county ? ' · ' : ''}${when}</div>
+        <div class="admin-card-body" id="admin-body-${r.id}" style="display:none;">
+          <div class="admin-card-desc">${escapeHTML(r.description)}</div>
+          ${photoHTML}
+          ${videoHTML}
+          <div class="admin-meta-row">
+            <span><b>County:</b> ${escapeHTML(r.county || ',')}</span>
+            <span><b>Reported by:</b> ${escapeHTML(r.pseudonym || 'Anonymous')}</span>
+            <span><b>Phone:</b> ${escapeHTML(r.phone || ',')}</span>
+            <span><b>Submitted:</b> ${when}</span>
+          </div>
+          <div class="admin-actions">
+            ${actionsHTML}
+          </div>
+          <p class="admin-status-msg" id="admin-status-${r.id}"></p>
         </div>
-        <div class="admin-actions">
-          ${actionsHTML}
-        </div>
-        <p class="admin-status-msg" id="admin-status-${r.id}"></p>
       </div>
     `;
+  }
+
+  function adminToggleCard(id){
+    const body = document.getElementById(`admin-body-${id}`);
+    if(!body) return;
+    body.style.display = body.style.display === 'none' ? 'block' : 'none';
   }
 
   async function adminLoadReports(){
@@ -3002,7 +3036,7 @@
   checkAdminRoute();
 
   Object.assign(window, {
-    adminSendCode, adminVerifyCode, adminLogout, adminAct, adminLoadReports, adminLoadOrders,
+    adminSendCode, adminVerifyCode, adminLogout, adminAct, adminLoadReports, adminLoadOrders, adminToggleCard,
     captureLocation,
     startCamera,
     flipCamera,
