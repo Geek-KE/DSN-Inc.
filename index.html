@@ -742,6 +742,73 @@
     .wiz-count{width:auto; order:0;}
   }
 
+  /* ==================================================================
+     Collapsible sections: Trust (footer), Data usage, Who reads this,
+     Data access (two stages)
+     ================================================================== */
+  .reveal-head{
+    width:100%; display:flex; align-items:flex-start; justify-content:space-between; gap:24px;
+    text-align:left; background:none; border:none; border-top:2px solid var(--trust);
+    border-bottom:1px solid var(--line); border-radius:0; padding:30px 0; cursor:pointer;
+    font-family:inherit; color:inherit; transition:border-color .15s ease;
+  }
+  .reveal-head:hover{border-bottom-color:var(--signal);}
+  .reveal-head:hover .reveal-head-title{color:var(--signal);}
+  .reveal-head-text{display:block; min-width:0;}
+  .reveal-head .section-kicker{margin-bottom:10px;}
+  .reveal-head-title{
+    display:block; font-family:'Outfit', system-ui, sans-serif; font-weight:700; color:var(--trust);
+    font-size:clamp(1.45rem,2.5vw,2.05rem); line-height:1.15; margin-bottom:8px; transition:color .15s ease;
+  }
+  .reveal-head-hint{display:block; color:var(--ink-soft); font-size:.92rem;}
+  .reveal-head-chevron{
+    flex-shrink:0; width:44px; height:44px; border:2px solid var(--line); color:var(--trust);
+    display:flex; align-items:center; justify-content:center; font-size:1.2rem;
+    transition:transform .25s ease, border-color .2s ease, color .2s ease;
+  }
+  .reveal-head.open .reveal-head-chevron{transform:rotate(180deg); border-color:var(--verified); color:var(--verified);}
+
+  .reveal-body{padding-top:34px; animation:revealIn .26s ease;}
+  .reveal-body[hidden]{display:none;}
+  @keyframes revealIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  /* the inner "Get the data..." stage sits one level in */
+  .reveal-head-inner{border-top:1px solid var(--line); padding:24px 0;}
+  .reveal-head-inner .reveal-head-title{font-size:clamp(1.25rem,2vw,1.7rem); margin-bottom:6px;}
+  #access-stage-one{padding-top:18px;}
+  #access-stage-two{padding-top:26px;}
+  .access-intro{margin-bottom:30px; max-width:70ch;}
+
+  /* ---------- Trust, now living in the footer ---------- */
+  footer{padding:0 0 32px;}
+  .footer-disclosure{border-bottom:1px solid var(--line); margin-bottom:26px;}
+  .footer-toggle{
+    display:inline-flex; align-items:center; gap:10px; background:none; border:none;
+    padding:22px 0; cursor:pointer; font-family:inherit; color:var(--trust);
+  }
+  .footer-toggle-word{
+    font-family:'Outfit', system-ui, sans-serif; font-weight:700; font-size:1.05rem;
+    border-bottom:2px solid var(--trust); padding-bottom:2px; transition:color .15s ease, border-color .15s ease;
+  }
+  .footer-toggle:hover .footer-toggle-word{color:var(--signal); border-bottom-color:var(--signal);}
+  .footer-toggle-sign{
+    width:22px; height:22px; border:2px solid var(--line); display:flex; align-items:center;
+    justify-content:center; font-size:.9rem; font-weight:700; line-height:1; color:var(--ink-soft);
+    transition:transform .22s ease, border-color .2s ease, color .2s ease;
+  }
+  .footer-toggle.open .footer-toggle-sign{transform:rotate(45deg); border-color:var(--verified); color:var(--verified);}
+  .footer-panel{padding:0 0 26px; max-width:70ch; animation:revealIn .24s ease;}
+  .footer-panel[hidden]{display:none;}
+  .footer-panel h3{font-size:1.2rem; margin-bottom:10px;}
+  .footer-panel p{font-size:.94rem;}
+  .footer-inner{padding-top:4px;}
+
+  @media (max-width:860px){
+    .reveal-head{padding:22px 0; gap:14px;}
+    .reveal-head-chevron{width:38px; height:38px;}
+    .reveal-body{padding-top:24px;}
+  }
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -765,7 +832,7 @@
     <nav class="links">
       <a href="#report">Report</a>
       <a href="#browse">Stories</a>
-      <a href="#trust">How it works</a>
+      <a href="#data-use">How it works</a>
       <a href="#audiences">Who it's for</a>
       <a href="#access">Data access</a>
       <a href="#contact" class="nav-cta">Get in touch</a>
@@ -992,21 +1059,19 @@
   </div>
 </section>
 
-<section class="alt" id="trust">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="section-kicker">Trust</span>
-      <h2>A quick look before it goes live.</h2>
-      <p>We confirm each story is genuine and matches where it claims to be from. You stay anonymous to everyone else. Contact details, if given, stay with our team only.</p>
-    </div>
-  </div>
-</section>
-
 <section class="alt" id="data-use">
   <div class="wrap">
+    <button type="button" class="reveal-head" id="datause-toggle" aria-expanded="false" aria-controls="datause-body">
+      <span class="reveal-head-text">
+        <span class="section-kicker">Data Usage &amp; Privacy</span>
+        <span class="reveal-head-title">How Your Story Is Used</span>
+        <span class="reveal-head-hint">Tap to read how submissions are handled.</span>
+      </span>
+      <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
+    </button>
+
+    <div class="reveal-body" id="datause-body" hidden>
     <div class="section-head">
-      <span class="section-kicker">Data Usage &amp; Privacy</span>
-      <h2>How Your Story Is Used</h2>
       <p>Your submission is published in the form you provide it. Beyond publication, Mtaa Pulse aggregates submissions to identify patterns across regions, including recurring concerns, emerging improvements, and areas of community pride. It is this aggregated insight, not personal information, that informs our reporting and services.</p>
     </div>
     <div class="stat-row" style="flex-direction:column; gap:14px; max-width:640px;">
@@ -1014,15 +1079,22 @@
       <div class="stat" style="border-left-color:var(--verified);"><span>Investors and public officials may request the same category of aggregated trend data. Personal identifiers, including names, phone numbers, and precise coordinates, are never included or disclosed.</span></div>
       <div class="stat" style="border-left-color:var(--verified);"><span>Phone numbers provided for follow-up are accessible only to authorized Mtaa Pulse personnel and are never shared, sold, or included in any external release.</span></div>
     </div>
+    </div>
   </div>
 </section>
 
 <section id="audiences">
   <div class="wrap">
-    <div class="section-head">
-      <span class="section-kicker">Who reads this</span>
-      <h2>Same stories, different uses.</h2>
-    </div>
+    <button type="button" class="reveal-head" id="audiences-toggle" aria-expanded="false" aria-controls="audiences-body">
+      <span class="reveal-head-text">
+        <span class="section-kicker">Who reads this</span>
+        <span class="reveal-head-title">Same stories, different uses.</span>
+        <span class="reveal-head-hint">Tap to see who uses these reports and how.</span>
+      </span>
+      <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
+    </button>
+
+    <div class="reveal-body" id="audiences-body" hidden>
     <div class="audience-tabs" role="tablist">
       <button class="tab-btn active" onclick="showAudience(this,'students')">Students &amp; Researchers</button>
       <button class="tab-btn" onclick="showAudience(this,'politicians')">Political leaders</button>
@@ -1037,16 +1109,31 @@
     <div class="audience-panel" id="aud-investors">
       <p>See resources and land conditions as reported by people who live with them daily.</p>
     </div>
+    </div>
   </div>
 </section>
 
 <section id="access">
   <div class="wrap">
-    <div class="section-head">
-      <span class="section-kicker">Data access</span>
-      <h2>Get the data, raw or as a briefing.</h2>
-      <p>Students pay a flat fee or use a university code. Investors and political leaders describe their need and get a quote first.</p>
-    </div>
+    <button type="button" class="reveal-head" id="access-toggle" aria-expanded="false" aria-controls="access-stage-one">
+      <span class="reveal-head-text">
+        <span class="section-kicker">Data access</span>
+        <span class="reveal-head-hint">Tap to open.</span>
+      </span>
+      <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
+    </button>
+
+    <div class="reveal-body" id="access-stage-one" hidden>
+      <button type="button" class="reveal-head reveal-head-inner" id="access-title-toggle" aria-expanded="false" aria-controls="access-stage-two">
+        <span class="reveal-head-text">
+          <span class="reveal-head-title">Get the data, raw or as a briefing.</span>
+          <span class="reveal-head-hint">Tap the title for the ordering options.</span>
+        </span>
+        <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
+      </button>
+
+      <div class="reveal-body" id="access-stage-two" hidden>
+        <p class="access-intro">Students pay a flat fee or use a university code. Investors and political leaders describe their need and get a quote first.</p>
 
     <div class="access-tabs" role="tablist">
       <button type="button" class="access-tab active" onclick="showAccessTab(this,'student')">Student</button>
@@ -1265,6 +1352,8 @@
         </div>
       </div>
     </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1300,14 +1389,27 @@
   </div>
 </section>
 
-<footer>
-  <div class="wrap footer-inner">
-    <p>© 2026 Mtaa Pulse, a DSN Group company.</p>
-    <div class="footer-links">
-      <a href="#report">Report</a>
-      <a href="#browse">Browse Reports</a>
-      <a href="#trust">How it works</a>
-      <a href="#contact">Contact</a>
+<footer id="trust">
+  <div class="wrap">
+    <div class="footer-disclosure">
+      <button type="button" class="footer-toggle" id="trust-toggle" aria-expanded="false" aria-controls="trust-body">
+        <span class="footer-toggle-word">Trust</span>
+        <span class="footer-toggle-sign" aria-hidden="true">+</span>
+      </button>
+      <div class="footer-panel" id="trust-body" hidden>
+        <h3>A quick look before it goes live.</h3>
+        <p>We confirm each story is genuine and matches where it claims to be from. You stay anonymous to everyone else. Contact details, if given, stay with our team only.</p>
+      </div>
+    </div>
+
+    <div class="footer-inner">
+      <p>© 2026 Mtaa Pulse, a DSN Group company.</p>
+      <div class="footer-links">
+        <a href="#report">Report</a>
+        <a href="#browse">Stories</a>
+        <a href="#access">Data access</a>
+        <a href="#contact">Contact</a>
+      </div>
     </div>
   </div>
 </footer>
@@ -2711,6 +2813,57 @@
       box.innerHTML = `<div class="admin-empty-state">Orders could not be listed here (${escapeHTML(err.message || 'no read access')}). Any order that fails to save is emailed to ${CONTACT_INBOX} instead.</div>`;
     }
   }
+
+  // ---------- collapsible sections ----------
+  // One generic toggle drives Trust in the footer, Data usage, Who reads this,
+  // and both stages of Data access, rather than five near-identical handlers.
+  function wireDisclosure(buttonId, panelId){
+    const btn = document.getElementById(buttonId);
+    const panel = document.getElementById(panelId);
+    if(!btn || !panel) return null;
+
+    const set = (open) => {
+      panel.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+      btn.classList.toggle('open', open);
+    };
+
+    btn.addEventListener('click', () => set(panel.hidden));
+    return { open: () => set(true), close: () => set(false), btn, panel };
+  }
+
+  const dTrust     = wireDisclosure('trust-toggle', 'trust-body');
+  const dDataUse   = wireDisclosure('datause-toggle', 'datause-body');
+  const dAudiences = wireDisclosure('audiences-toggle', 'audiences-body');
+  const dAccess    = wireDisclosure('access-toggle', 'access-stage-one');
+  const dAccessTwo = wireDisclosure('access-title-toggle', 'access-stage-two');
+
+  // Closing the outer Data access panel folds the ordering options with it,
+  // so reopening always starts from the title again.
+  if(dAccess && dAccessTwo){
+    dAccess.btn.addEventListener('click', () => {
+      if(dAccess.panel.hidden) dAccessTwo.close();
+    });
+  }
+
+  // A link or a deep link into a collapsed section opens it on arrival.
+  const DISCLOSURE_TARGETS = {
+    '#trust': dTrust,
+    '#data-use': dDataUse,
+    '#audiences': dAudiences,
+    '#access': dAccess
+  };
+
+  function openDisclosureFor(hash){
+    const d = DISCLOSURE_TARGETS[hash];
+    if(d) d.open();
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', () => openDisclosureFor(a.getAttribute('href')));
+  });
+  window.addEventListener('hashchange', () => openDisclosureFor(window.location.hash));
+  openDisclosureFor(window.location.hash);
 
   // Expose functions used by inline onclick="" handlers in the HTML.
   // This module's top-level functions are scoped to the module and are
