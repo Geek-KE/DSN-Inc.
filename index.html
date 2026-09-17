@@ -158,9 +158,11 @@
   footer{padding:36px 0; border-top:1px solid var(--line);}
   .footer-inner{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;}
   .footer-inner p{margin:0; font-size:.85rem; color:var(--ink-soft);}
-  .footer-links{display:flex; gap:20px;}
+  .footer-links{display:flex; gap:20px; flex-wrap:wrap;}
   .footer-links a{font-size:.85rem; color:var(--ink-soft); text-decoration:none;}
   .footer-links a:hover{color:var(--signal);}
+  .footer-link-btn{font-family:inherit; font-size:.85rem; color:var(--ink-soft); background:none; border:none; padding:0; cursor:pointer; text-decoration:none;}
+  .footer-link-btn:hover{color:var(--signal);}
 
   @media (max-width:860px){
     nav.links{position:fixed; top:68px; left:0; right:0; background:var(--sky); flex-direction:column; padding:20px 32px; border-bottom:1px solid var(--line); transform:translateY(-140%); transition:transform .25s ease; gap:16px;}
@@ -215,6 +217,18 @@
   .map-panel-head h3{margin:0; font-size:1.1rem;}
   .map-close{background:none; border:none; font-size:1.4rem; line-height:1; color:var(--ink-soft); cursor:pointer; padding:4px 8px;}
   .map-close:hover{color:var(--trust);}
+
+  /* ---------- Generic info modal (Data usage, Who reads this, Data access, Contact) ---------- */
+  .info-modal{position:fixed; inset:0; z-index:110; background:rgba(11,32,42,.72); display:none; align-items:center; justify-content:center; padding:24px;}
+  .info-modal.open{display:flex;}
+  .info-panel{background:#fff; border-radius:16px; width:100%; max-width:760px; max-height:min(760px,88vh); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);}
+  .info-panel-head{display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:26px 30px; background:var(--sky); border-radius:16px 16px 0 0;}
+  .info-panel-head .section-kicker{margin-bottom:8px;}
+  .info-panel-head h3{margin:0; font-size:clamp(1.3rem,2.2vw,1.7rem);}
+  .info-close{flex-shrink:0; background:#fff; border:none; width:36px; height:36px; border-radius:50%; font-size:1.25rem; line-height:1; color:var(--ink-soft); cursor:pointer; box-shadow:0 4px 10px rgba(11,79,108,.15);}
+  .info-close:hover{color:var(--trust);}
+  .info-panel-body{padding:28px 30px 32px; overflow-y:auto;}
+  .info-panel-body > *:first-child{margin-top:0;}
   .map-tabs{display:flex; gap:6px; padding:12px 22px 0;}
   .map-tab{background:none; border:none; padding:9px 16px; font-size:.88rem; font-weight:600; color:var(--ink-soft); cursor:pointer; border-radius:8px 8px 0 0;}
   .map-tab.active{color:var(--trust); background:var(--sky);}
@@ -435,6 +449,7 @@
   .review-row dt{font-size:.8rem; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em; margin:0;}
   .review-row dd{margin:0; font-size:.94rem; color:var(--ink); word-break:break-word; white-space:pre-wrap;}
   .review-note{font-size:.82rem; color:var(--verified); background:var(--verified-bg); padding:14px 16px; border-radius:var(--radius-sm); margin-top:18px; max-width:none;}
+  .submit-error{font-size:.85rem; font-weight:600; color:var(--warn); background:var(--warn-bg); padding:10px 14px; border-radius:var(--radius-sm); max-width:none;}
   .submit-row{margin-top:24px;}
   #submit-msg{display:none;}
 
@@ -457,16 +472,18 @@
   #report-list{max-height:none;}
   .feed-scroller{
     height:calc(100vh - var(--header-h)); height:calc(100dvh - var(--header-h));
-    overflow-y:auto; scroll-snap-type:y mandatory; scroll-behavior:smooth;
+    overflow-y:auto; scroll-snap-type:y proximity; scroll-behavior:smooth;
     -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    overscroll-behavior-y:contain;
   }
   .feed-scroller::-webkit-scrollbar{display:none;}
 
   .feed-card{
     position:relative; height:calc(100vh - var(--header-h)); height:calc(100dvh - var(--header-h));
-    scroll-snap-align:start; scroll-snap-stop:always;
+    scroll-snap-align:center; scroll-snap-stop:normal;
     display:flex; align-items:flex-end; overflow:hidden;
     background:linear-gradient(160deg,#0b4f6c 0%, #12303d 100%);
+    transform:translateZ(0);
   }
   .feed-media-wrap{position:absolute; inset:0;}
   .feed-media{width:100%; height:100%; object-fit:cover; display:block;}
@@ -743,41 +760,13 @@
   }
 
   /* ==================================================================
-     Collapsible sections: Trust (footer), Data usage, Who reads this,
-     Data access (two stages)
+     Data usage, Who reads this, Data access and Contact are reached as
+     modals from the footer (see .info-modal below); this just lays out
+     the heading text reused inside each modal panel.
      ================================================================== */
-  .reveal-head{
-    width:100%; display:flex; align-items:flex-start; justify-content:space-between; gap:24px;
-    text-align:left; background:none; border:none; border-top:2px solid var(--trust);
-    border-bottom:1px solid var(--line); border-radius:0; padding:30px 0; cursor:pointer;
-    font-family:inherit; color:inherit; transition:border-color .15s ease;
-  }
-  .reveal-head:hover{border-bottom-color:var(--signal);}
-  .reveal-head:hover .reveal-head-title{color:var(--signal);}
   .reveal-head-text{display:block; min-width:0;}
-  .reveal-head .section-kicker{margin-bottom:10px;}
-  .reveal-head-title{
-    display:block; font-family:'Outfit', system-ui, sans-serif; font-weight:700; color:var(--trust);
-    font-size:clamp(1.45rem,2.5vw,2.05rem); line-height:1.15; margin-bottom:8px; transition:color .15s ease;
-  }
-  .reveal-head-hint{display:block; color:var(--ink-soft); font-size:.92rem;}
-  .reveal-head-chevron{
-    flex-shrink:0; width:44px; height:44px; border:2px solid var(--line); color:var(--trust);
-    display:flex; align-items:center; justify-content:center; font-size:1.2rem;
-    transition:transform .25s ease, border-color .2s ease, color .2s ease;
-  }
-  .reveal-head.open .reveal-head-chevron{transform:rotate(180deg); border-color:var(--verified); color:var(--verified);}
-
-  .reveal-body{padding-top:34px; animation:revealIn .26s ease;}
-  .reveal-body[hidden]{display:none;}
   @keyframes revealIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
-
-  /* the inner "Get the data..." stage sits one level in */
-  .reveal-head-inner{border-top:1px solid var(--line); padding:24px 0;}
-  .reveal-head-inner .reveal-head-title{font-size:clamp(1.25rem,2vw,1.7rem); margin-bottom:6px;}
-  #access-stage-one{padding-top:18px;}
-  #access-stage-two{padding-top:26px;}
-  .access-intro{margin-bottom:30px; max-width:70ch;}
+  .access-intro{margin-bottom:24px; max-width:70ch;}
 
   /* ---------- Trust, now living in the footer ---------- */
   footer{padding:0 0 32px;}
@@ -865,7 +854,7 @@
       <span class="story-launcher-text">
         <span class="section-kicker">Share your story</span>
         <span class="story-launcher-title">Share What Is Happening In Your Area</span>
-        <span class="story-launcher-sub">Tap to begin. We&rsquo;ll take you through it one step at a time. It takes about two minutes.</span>
+        <span class="story-launcher-sub">We&rsquo;ll take you through it one step at a time. It takes about two minutes.</span>
       </span>
       <span class="story-launcher-chevron" aria-hidden="true">&#8595;</span>
     </button>
@@ -1014,6 +1003,7 @@
           <div class="submit-row">
             <button type="submit" class="btn btn-solid">Submit my story</button>
             <span id="submit-msg">Thank you. It&rsquo;ll appear once we&rsquo;ve had a look.</span>
+            <span id="submit-error" class="submit-error" role="alert" style="display:none;"></span>
           </div>
         </fieldset>
 
@@ -1059,336 +1049,6 @@
   </div>
 </section>
 
-<section class="alt" id="data-use">
-  <div class="wrap">
-    <button type="button" class="reveal-head" id="datause-toggle" aria-expanded="false" aria-controls="datause-body">
-      <span class="reveal-head-text">
-        <span class="section-kicker">Data Usage &amp; Privacy</span>
-        <span class="reveal-head-title">How Your Story Is Used</span>
-        <span class="reveal-head-hint">Tap to read how submissions are handled.</span>
-      </span>
-      <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
-    </button>
-
-    <div class="reveal-body" id="datause-body" hidden>
-    <div class="section-head">
-      <p>Your submission is published in the form you provide it. Beyond publication, Mtaa Pulse aggregates submissions to identify patterns across regions, including recurring concerns, emerging improvements, and areas of community pride. It is this aggregated insight, not personal information, that informs our reporting and services.</p>
-    </div>
-    <div class="stat-row" style="flex-direction:column; gap:14px; max-width:640px;">
-      <div class="stat" style="border-left-color:var(--verified);"><span>Academic and research institutions access aggregated, ward-level trend data for study and analysis.</span></div>
-      <div class="stat" style="border-left-color:var(--verified);"><span>Investors and public officials may request the same category of aggregated trend data. Personal identifiers, including names, phone numbers, and precise coordinates, are never included or disclosed.</span></div>
-      <div class="stat" style="border-left-color:var(--verified);"><span>Phone numbers provided for follow-up are accessible only to authorized Mtaa Pulse personnel and are never shared, sold, or included in any external release.</span></div>
-    </div>
-    </div>
-  </div>
-</section>
-
-<section id="audiences">
-  <div class="wrap">
-    <button type="button" class="reveal-head" id="audiences-toggle" aria-expanded="false" aria-controls="audiences-body">
-      <span class="reveal-head-text">
-        <span class="section-kicker">Who reads this</span>
-        <span class="reveal-head-title">Same stories, different uses.</span>
-        <span class="reveal-head-hint">Tap to see who uses these reports and how.</span>
-      </span>
-      <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
-    </button>
-
-    <div class="reveal-body" id="audiences-body" hidden>
-    <div class="audience-tabs" role="tablist">
-      <button class="tab-btn active" onclick="showAudience(this,'students')">Students &amp; Researchers</button>
-      <button class="tab-btn" onclick="showAudience(this,'politicians')">Political leaders</button>
-      <button class="tab-btn" onclick="showAudience(this,'investors')">Investors</button>
-    </div>
-    <div class="audience-panel active" id="aud-students">
-      <p>Filter stories by county, ward, and theme for research grounded in reality.</p>
-    </div>
-    <div class="audience-panel" id="aud-politicians">
-      <p>See which issues keep recurring in a constituency, and what's already working.</p>
-    </div>
-    <div class="audience-panel" id="aud-investors">
-      <p>See resources and land conditions as reported by people who live with them daily.</p>
-    </div>
-    </div>
-  </div>
-</section>
-
-<section id="access">
-  <div class="wrap">
-    <button type="button" class="reveal-head" id="access-toggle" aria-expanded="false" aria-controls="access-stage-one">
-      <span class="reveal-head-text">
-        <span class="section-kicker">Data access</span>
-        <span class="reveal-head-hint">Tap to open.</span>
-      </span>
-      <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
-    </button>
-
-    <div class="reveal-body" id="access-stage-one" hidden>
-      <button type="button" class="reveal-head reveal-head-inner" id="access-title-toggle" aria-expanded="false" aria-controls="access-stage-two">
-        <span class="reveal-head-text">
-          <span class="reveal-head-title">Get the data, raw or as a briefing.</span>
-          <span class="reveal-head-hint">Tap the title for the ordering options.</span>
-        </span>
-        <span class="reveal-head-chevron" aria-hidden="true">&#8595;</span>
-      </button>
-
-      <div class="reveal-body" id="access-stage-two" hidden>
-        <p class="access-intro">Students pay a flat fee or use a university code. Investors and political leaders describe their need and get a quote first.</p>
-
-    <div class="access-tabs" role="tablist">
-      <button type="button" class="access-tab active" onclick="showAccessTab(this,'student')">Student</button>
-      <button type="button" class="access-tab" onclick="showAccessTab(this,'code')">University access code</button>
-      <button type="button" class="access-tab" onclick="showAccessTab(this,'request')">Investor / Politician</button>
-    </div>
-
-    <!-- STUDENT: pay directly -->
-    <div class="access-panel active" id="access-student">
-      <div class="access-layout">
-        <div class="access-form">
-          <details class="pricing-toggle">
-            <summary>See pricing</summary>
-            <div class="level-list" id="price-grid">
-              <div class="level-row" data-level="undergrad" onclick="selectLevel(this)">
-                <div class="level-name">Undergraduate</div>
-                <div class="level-price">KSh 333</div>
-              </div>
-              <div class="level-row" data-level="masters" onclick="selectLevel(this)">
-                <div class="level-name">Masters</div>
-                <div class="level-price">KSh 777</div>
-              </div>
-              <div class="level-row" data-level="phd" onclick="selectLevel(this)">
-                <div class="level-name">PhD</div>
-                <div class="level-price">KSh 7,777</div>
-              </div>
-            </div>
-          </details>
-          <div class="field">
-            <label for="s-phone">M-Pesa phone number</label>
-            <input type="text" id="s-phone" placeholder="2547XXXXXXXX">
-          </div>
-          <div class="submit-row">
-            <button type="button" class="btn btn-primary" onclick="daPayStudent()">Pay with M-Pesa</button>
-            <button type="button" class="small-btn" onclick="alert('Card payment goes through the same subscribe endpoint via Paystack. Wire up your publishable key on the backend.')">Pay with card instead</button>
-          </div>
-          <span class="geo-status" id="student-status"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- UNIVERSITY ACCESS CODE -->
-    <div class="access-panel" id="access-code">
-      <div class="access-layout">
-        <div class="access-form">
-          <div class="field">
-            <label for="c-code">Access code</label>
-            <input type="text" id="c-code" placeholder="SD-XXXXXXXX">
-          </div>
-          <div class="field">
-            <label for="c-phone">Phone number</label>
-            <input type="text" id="c-phone" placeholder="2547XXXXXXXX">
-          </div>
-          <div class="field">
-            <label for="c-email">Email</label>
-            <input type="email" id="c-email" placeholder="you@university.ac.ke">
-          </div>
-          <button type="button" class="btn btn-primary" onclick="daRedeemCode()">Verify code</button>
-          <span class="geo-status" id="code-status"></span>
-
-          <div class="access-next" id="otp-block" style="display:none;">
-            <div class="field">
-              <label for="c-otp">Enter the OTP sent to your phone and email</label>
-              <input type="text" id="c-otp" placeholder="6-digit code">
-            </div>
-            <button type="button" class="btn btn-primary" onclick="daVerifyCodeOtp()">Confirm and get access</button>
-          </div>
-        </div>
-        <div class="access-side">
-          <p class="hint">If your university has already paid on your behalf, use the code they gave you instead of paying again. Each code works once and is tied to your school's tier.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- INVESTOR / POLITICIAN -->
-    <div class="access-panel" id="access-request">
-      <div class="access-layout">
-        <form class="access-form" id="order-form" novalidate>
-          <div class="field">
-            <label for="r-type">I am a</label>
-            <select id="r-type" required>
-              <option value="investor">Investor</option>
-              <option value="politician">Political leader</option>
-              <option value="institution">Institution / NGO</option>
-              <option value="media">Media / journalist</option>
-            </select>
-          </div>
-
-          <div class="field-grid">
-            <div class="field">
-              <label for="ord-name">Full name</label>
-              <input type="text" id="ord-name" placeholder="Jane Wanjiru" required>
-            </div>
-            <div class="field">
-              <label for="ord-org">Organisation</label>
-              <input type="text" id="ord-org" placeholder="Company, party or institution" required>
-            </div>
-          </div>
-
-          <div class="field-grid">
-            <div class="field">
-              <label for="ord-email">Email</label>
-              <input type="email" id="ord-email" placeholder="you@example.com" required>
-            </div>
-            <div class="field">
-              <label for="ord-phone">Phone</label>
-              <input type="text" id="ord-phone" placeholder="2547XXXXXXXX" required>
-            </div>
-          </div>
-
-          <div class="field">
-            <label>Which data do you want? <span style="font-weight:400;">(choose one or more)</span></label>
-            <div class="chip-set" id="ord-topics">
-              <label class="chip"><input type="checkbox" value="Roads &amp; infrastructure"><span>Roads &amp; infrastructure</span></label>
-              <label class="chip"><input type="checkbox" value="Security"><span>Security</span></label>
-              <label class="chip"><input type="checkbox" value="Soil &amp; agriculture"><span>Soil &amp; agriculture</span></label>
-              <label class="chip"><input type="checkbox" value="Water &amp; drainage"><span>Water &amp; drainage</span></label>
-              <label class="chip"><input type="checkbox" value="Minerals &amp; resources"><span>Minerals &amp; resources</span></label>
-              <label class="chip"><input type="checkbox" value="Health access"><span>Health access</span></label>
-              <label class="chip"><input type="checkbox" value="Education"><span>Education</span></label>
-            </div>
-          </div>
-
-          <div class="field-grid">
-            <div class="field">
-              <label for="ord-county">Area of interest</label>
-              <select id="ord-county" required>
-                <option value="" disabled selected>Choose a county</option>
-                <option value="All counties">All counties (national)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="ord-period">Time period</label>
-              <select id="ord-period" required>
-                <option value="" disabled selected>Choose a period</option>
-                <option>Last 3 months</option>
-                <option>Last 6 months</option>
-                <option>Last 12 months</option>
-                <option>Last 3 years</option>
-                <option>Everything on record</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field-grid">
-            <div class="field">
-              <label for="ord-format">Delivery format</label>
-              <select id="ord-format" required>
-                <option value="" disabled selected>Choose a format</option>
-                <option>Raw dataset (CSV)</option>
-                <option>Dashboard access</option>
-                <option>Written briefing (PDF)</option>
-                <option>Briefing + presentation</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="ord-budget">Indicative budget <span style="font-weight:400;">(optional)</span></label>
-              <select id="ord-budget">
-                <option value="">Prefer a quote first</option>
-                <option>Under KSh 100,000</option>
-                <option>KSh 100,000 to 500,000</option>
-                <option>KSh 500,000 to 2M</option>
-                <option>Above KSh 2M</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="req-desc">Anything else we should know?</label>
-            <textarea id="req-desc" rows="3" placeholder="e.g. Security incident trends in Turkana County over the last 12 months, with risk scoring by ward."></textarea>
-          </div>
-
-          <div class="order-summary" id="order-summary" hidden>
-            <div class="order-summary-head">Your order</div>
-            <div id="order-summary-body"></div>
-          </div>
-
-          <div class="submit-row">
-            <button type="submit" class="btn btn-solid" id="order-submit">Submit request</button>
-          </div>
-          <span class="geo-status" id="request-status"></span>
-        </form>
-
-        <div class="access-side">
-          <p class="hint">We'll review and send back a quote, and you can negotiate before paying anything.</p>
-
-          <div class="access-next">
-            <p class="hint" style="margin-bottom:14px;">Already have a quote and paid? Verify it here.</p>
-            <div class="field">
-              <label for="p-code">Access code</label>
-              <input type="text" id="p-code" placeholder="SD-XXXXXXXX">
-            </div>
-            <div class="field">
-              <label for="p-ref">M-Pesa transaction code or card receipt</label>
-              <input type="text" id="p-ref" placeholder="e.g. QGH7XJ2K9L">
-            </div>
-            <div class="field">
-              <label for="p-phone">Phone number</label>
-              <input type="text" id="p-phone" placeholder="2547XXXXXXXX">
-            </div>
-            <div class="field">
-              <label for="p-email">Email</label>
-              <input type="email" id="p-email" placeholder="you@example.com">
-            </div>
-            <button type="button" class="btn btn-primary" onclick="daVerifyPayment()">Verify payment</button>
-            <span class="geo-status" id="payment-status"></span>
-
-            <div class="access-next" id="p-otp-block" style="display:none;">
-              <div class="field">
-                <label for="p-otp">Enter the OTP sent to your phone and email</label>
-                <input type="text" id="p-otp" placeholder="6-digit code">
-              </div>
-              <button type="button" class="btn btn-primary" onclick="daVerifyPaymentOtp()">Confirm and get access</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="contact">
-  <div class="wrap">
-    <div class="contact-wrap">
-      <button type="button" class="contact-launcher" id="contact-launcher" aria-expanded="false" aria-controls="contact-body">
-        <span class="contact-launcher-text">
-          <span class="contact-launcher-title">Let's talk about what you need.</span>
-          <span class="contact-launcher-sub">Resident, researcher, investor, or policymaker. Tap here and we'll point you the right way.</span>
-        </span>
-        <span class="contact-launcher-chevron" aria-hidden="true">&#8595;</span>
-      </button>
-
-      <div class="contact-body" id="contact-body" hidden>
-      <form class="contact-form" id="contact-form" novalidate>
-        <input type="text" id="ct-name" placeholder="Full name" required>
-        <input type="email" id="ct-email" placeholder="Email address" required>
-        <select id="ct-topic" required>
-          <option value="" disabled selected>I'm interested in…</option>
-          <option>Submitting reports</option>
-          <option>Accessing data as a researcher</option>
-          <option>Accessing data as a political leader</option>
-          <option>Accessing data as an investor</option>
-          <option>Something else</option>
-        </select>
-        <textarea rows="3" id="ct-msg" placeholder="Tell us a little more"></textarea>
-        <button type="submit">Send message</button>
-        <p class="form-note" id="form-success" style="display:none;">Thank you. Your message has been sent to the Mtaa Pulse team.</p>
-      </form>
-      </div>
-    </div>
-  </div>
-</section>
-
 <footer id="trust">
   <div class="wrap">
     <div class="footer-disclosure">
@@ -1407,8 +1067,10 @@
       <div class="footer-links">
         <a href="#report">Report</a>
         <a href="#browse">Stories</a>
-        <a href="#access">Data access</a>
-        <a href="#contact">Contact</a>
+        <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-data-use')">Data usage &amp; privacy</button>
+        <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-audiences')">Who reads this</button>
+        <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-access')">Data access</button>
+        <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-contact')">Let's talk about what you need</button>
       </div>
     </div>
   </div>
@@ -1434,6 +1096,320 @@
     </div>
   </div>
 </div>
+<!-- ---------- Data usage & privacy ---------- -->
+<div class="info-modal" id="modal-data-use" role="dialog" aria-modal="true" aria-label="Data usage and privacy">
+  <div class="info-panel">
+    <div class="info-panel-head">
+      <span class="reveal-head-text">
+        <span class="section-kicker">Data Usage &amp; Privacy</span>
+        <h3>How Your Story Is Used</h3>
+      </span>
+      <button class="info-close" onclick="closeInfoModal('modal-data-use')" aria-label="Close">&times;</button>
+    </div>
+    <div class="info-panel-body">
+      <p>Your submission is published in the form you provide it. Beyond publication, Mtaa Pulse aggregates submissions to identify patterns across regions, including recurring concerns, emerging improvements, and areas of community pride. It is this aggregated insight, not personal information, that informs our reporting and services.</p>
+      <div class="stat-row" style="flex-direction:column; gap:14px; max-width:640px;">
+        <div class="stat" style="border-left-color:var(--verified);"><span>Academic and research institutions access aggregated, ward-level trend data for study and analysis.</span></div>
+        <div class="stat" style="border-left-color:var(--verified);"><span>Investors and public officials may request the same category of aggregated trend data. Personal identifiers, including names, phone numbers, and precise coordinates, are never included or disclosed.</span></div>
+        <div class="stat" style="border-left-color:var(--verified);"><span>Phone numbers provided for follow-up are accessible only to authorized Mtaa Pulse personnel and are never shared, sold, or included in any external release.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Who reads this ---------- -->
+<div class="info-modal" id="modal-audiences" role="dialog" aria-modal="true" aria-label="Who reads this">
+  <div class="info-panel">
+    <div class="info-panel-head">
+      <span class="reveal-head-text">
+        <span class="section-kicker">Who reads this</span>
+        <h3>Same stories, different uses.</h3>
+      </span>
+      <button class="info-close" onclick="closeInfoModal('modal-audiences')" aria-label="Close">&times;</button>
+    </div>
+    <div class="info-panel-body">
+      <div class="audience-tabs" role="tablist">
+        <button class="tab-btn active" onclick="showAudience(this,'students')">Students &amp; Researchers</button>
+        <button class="tab-btn" onclick="showAudience(this,'politicians')">Political leaders</button>
+        <button class="tab-btn" onclick="showAudience(this,'investors')">Investors</button>
+      </div>
+      <div class="audience-panel active" id="aud-students">
+        <p>Filter stories by county, ward, and theme for research grounded in reality.</p>
+      </div>
+      <div class="audience-panel" id="aud-politicians">
+        <p>See which issues keep recurring in a constituency, and what's already working.</p>
+      </div>
+      <div class="audience-panel" id="aud-investors">
+        <p>See resources and land conditions as reported by people who live with them daily.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Data access ---------- -->
+<div class="info-modal" id="modal-access" role="dialog" aria-modal="true" aria-label="Data access">
+  <div class="info-panel">
+    <div class="info-panel-head">
+      <span class="reveal-head-text">
+        <span class="section-kicker">Data access</span>
+        <h3>Get the data, raw or as a briefing.</h3>
+      </span>
+      <button class="info-close" onclick="closeInfoModal('modal-access')" aria-label="Close">&times;</button>
+    </div>
+    <div class="info-panel-body">
+      <p class="access-intro">Students pay a flat fee or use a university code. Investors and political leaders describe their need and get a quote first.</p>
+
+      <div class="access-tabs" role="tablist">
+        <button type="button" class="access-tab active" onclick="showAccessTab(this,'student')">Student</button>
+        <button type="button" class="access-tab" onclick="showAccessTab(this,'code')">University access code</button>
+        <button type="button" class="access-tab" onclick="showAccessTab(this,'request')">Investor / Politician</button>
+      </div>
+
+      <!-- STUDENT: pay directly -->
+      <div class="access-panel active" id="access-student">
+        <div class="access-layout">
+          <div class="access-form">
+            <details class="pricing-toggle">
+              <summary>See pricing</summary>
+              <div class="level-list" id="price-grid">
+                <div class="level-row" data-level="undergrad" onclick="selectLevel(this)">
+                  <div class="level-name">Undergraduate</div>
+                  <div class="level-price">KSh 333</div>
+                </div>
+                <div class="level-row" data-level="masters" onclick="selectLevel(this)">
+                  <div class="level-name">Masters</div>
+                  <div class="level-price">KSh 777</div>
+                </div>
+                <div class="level-row" data-level="phd" onclick="selectLevel(this)">
+                  <div class="level-name">PhD</div>
+                  <div class="level-price">KSh 7,777</div>
+                </div>
+              </div>
+            </details>
+            <div class="field">
+              <label for="s-phone">M-Pesa phone number</label>
+              <input type="text" id="s-phone" placeholder="2547XXXXXXXX">
+            </div>
+            <div class="submit-row">
+              <button type="button" class="btn btn-primary" onclick="daPayStudent()">Pay with M-Pesa</button>
+              <button type="button" class="small-btn" onclick="alert('Card payment goes through the same subscribe endpoint via Paystack. Wire up your publishable key on the backend.')">Pay with card instead</button>
+            </div>
+            <span class="geo-status" id="student-status"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- UNIVERSITY ACCESS CODE -->
+      <div class="access-panel" id="access-code">
+        <div class="access-layout">
+          <div class="access-form">
+            <div class="field">
+              <label for="c-code">Access code</label>
+              <input type="text" id="c-code" placeholder="SD-XXXXXXXX">
+            </div>
+            <div class="field">
+              <label for="c-phone">Phone number</label>
+              <input type="text" id="c-phone" placeholder="2547XXXXXXXX">
+            </div>
+            <div class="field">
+              <label for="c-email">Email</label>
+              <input type="email" id="c-email" placeholder="you@university.ac.ke">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="daRedeemCode()">Verify code</button>
+            <span class="geo-status" id="code-status"></span>
+
+            <div class="access-next" id="otp-block" style="display:none;">
+              <div class="field">
+                <label for="c-otp">Enter the OTP sent to your phone and email</label>
+                <input type="text" id="c-otp" placeholder="6-digit code">
+              </div>
+              <button type="button" class="btn btn-primary" onclick="daVerifyCodeOtp()">Confirm and get access</button>
+            </div>
+          </div>
+          <div class="access-side">
+            <p class="hint">If your university has already paid on your behalf, use the code they gave you instead of paying again. Each code works once and is tied to your school's tier.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVESTOR / POLITICIAN -->
+      <div class="access-panel" id="access-request">
+        <div class="access-layout">
+          <form class="access-form" id="order-form" novalidate>
+            <div class="field">
+              <label for="r-type">I am a</label>
+              <select id="r-type" required>
+                <option value="investor">Investor</option>
+                <option value="politician">Political leader</option>
+                <option value="institution">Institution / NGO</option>
+                <option value="media">Media / journalist</option>
+              </select>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="ord-name">Full name</label>
+                <input type="text" id="ord-name" placeholder="Jane Wanjiru" required>
+              </div>
+              <div class="field">
+                <label for="ord-org">Organisation</label>
+                <input type="text" id="ord-org" placeholder="Company, party or institution" required>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="ord-email">Email</label>
+                <input type="email" id="ord-email" placeholder="you@example.com" required>
+              </div>
+              <div class="field">
+                <label for="ord-phone">Phone</label>
+                <input type="text" id="ord-phone" placeholder="2547XXXXXXXX" required>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Which data do you want? <span style="font-weight:400;">(choose one or more)</span></label>
+              <div class="chip-set" id="ord-topics">
+                <label class="chip"><input type="checkbox" value="Roads &amp; infrastructure"><span>Roads &amp; infrastructure</span></label>
+                <label class="chip"><input type="checkbox" value="Security"><span>Security</span></label>
+                <label class="chip"><input type="checkbox" value="Soil &amp; agriculture"><span>Soil &amp; agriculture</span></label>
+                <label class="chip"><input type="checkbox" value="Water &amp; drainage"><span>Water &amp; drainage</span></label>
+                <label class="chip"><input type="checkbox" value="Minerals &amp; resources"><span>Minerals &amp; resources</span></label>
+                <label class="chip"><input type="checkbox" value="Health access"><span>Health access</span></label>
+                <label class="chip"><input type="checkbox" value="Education"><span>Education</span></label>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="ord-county">Area of interest</label>
+                <select id="ord-county" required>
+                  <option value="" disabled selected>Choose a county</option>
+                  <option value="All counties">All counties (national)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="ord-period">Time period</label>
+                <select id="ord-period" required>
+                  <option value="" disabled selected>Choose a period</option>
+                  <option>Last 3 months</option>
+                  <option>Last 6 months</option>
+                  <option>Last 12 months</option>
+                  <option>Last 3 years</option>
+                  <option>Everything on record</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="ord-format">Delivery format</label>
+                <select id="ord-format" required>
+                  <option value="" disabled selected>Choose a format</option>
+                  <option>Raw dataset (CSV)</option>
+                  <option>Dashboard access</option>
+                  <option>Written briefing (PDF)</option>
+                  <option>Briefing + presentation</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="ord-budget">Indicative budget <span style="font-weight:400;">(optional)</span></label>
+                <select id="ord-budget">
+                  <option value="">Prefer a quote first</option>
+                  <option>Under KSh 100,000</option>
+                  <option>KSh 100,000 to 500,000</option>
+                  <option>KSh 500,000 to 2M</option>
+                  <option>Above KSh 2M</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="req-desc">Anything else we should know?</label>
+              <textarea id="req-desc" rows="3" placeholder="e.g. Security incident trends in Turkana County over the last 12 months, with risk scoring by ward."></textarea>
+            </div>
+
+            <div class="order-summary" id="order-summary" hidden>
+              <div class="order-summary-head">Your order</div>
+              <div id="order-summary-body"></div>
+            </div>
+
+            <div class="submit-row">
+              <button type="submit" class="btn btn-solid" id="order-submit">Submit request</button>
+            </div>
+            <span class="geo-status" id="request-status"></span>
+          </form>
+
+          <div class="access-side">
+            <p class="hint">We'll review and send back a quote, and you can negotiate before paying anything.</p>
+
+            <div class="access-next">
+              <p class="hint" style="margin-bottom:14px;">Already have a quote and paid? Verify it here.</p>
+              <div class="field">
+                <label for="p-code">Access code</label>
+                <input type="text" id="p-code" placeholder="SD-XXXXXXXX">
+              </div>
+              <div class="field">
+                <label for="p-ref">M-Pesa transaction code or card receipt</label>
+                <input type="text" id="p-ref" placeholder="e.g. QGH7XJ2K9L">
+              </div>
+              <div class="field">
+                <label for="p-phone">Phone number</label>
+                <input type="text" id="p-phone" placeholder="2547XXXXXXXX">
+              </div>
+              <div class="field">
+                <label for="p-email">Email</label>
+                <input type="email" id="p-email" placeholder="you@example.com">
+              </div>
+              <button type="button" class="btn btn-primary" onclick="daVerifyPayment()">Verify payment</button>
+              <span class="geo-status" id="payment-status"></span>
+
+              <div class="access-next" id="p-otp-block" style="display:none;">
+                <div class="field">
+                  <label for="p-otp">Enter the OTP sent to your phone and email</label>
+                  <input type="text" id="p-otp" placeholder="6-digit code">
+                </div>
+                <button type="button" class="btn btn-primary" onclick="daVerifyPaymentOtp()">Confirm and get access</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Contact ---------- -->
+<div class="info-modal" id="modal-contact" role="dialog" aria-modal="true" aria-label="Contact Mtaa Pulse">
+  <div class="info-panel">
+    <div class="info-panel-head">
+      <span class="reveal-head-text">
+        <h3>Let's talk about what you need.</h3>
+        <span class="contact-launcher-sub" style="color:var(--ink-soft);">Resident, researcher, investor, or policymaker &mdash; we'll point you the right way.</span>
+      </span>
+      <button class="info-close" onclick="closeInfoModal('modal-contact')" aria-label="Close">&times;</button>
+    </div>
+    <div class="info-panel-body">
+      <form class="contact-form" id="contact-form" novalidate>
+        <input type="text" id="ct-name" placeholder="Full name" required>
+        <input type="email" id="ct-email" placeholder="Email address" required>
+        <select id="ct-topic" required>
+          <option value="" disabled selected>I'm interested in…</option>
+          <option>Submitting reports</option>
+          <option>Accessing data as a researcher</option>
+          <option>Accessing data as a political leader</option>
+          <option>Accessing data as an investor</option>
+          <option>Something else</option>
+        </select>
+        <textarea rows="3" id="ct-msg" placeholder="Tell us a little more"></textarea>
+        <button type="submit">Send message</button>
+        <p class="form-note" id="form-success" style="display:none;">Thank you. Your message has been sent to the Mtaa Pulse team.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
 
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -1928,6 +1904,7 @@
   // ---------- form submit: reports start pending, only go live once checked ----------
   document.getElementById('report-form').addEventListener('submit', async function(e){
     e.preventDefault();
+    document.getElementById('submit-error').style.display = 'none';
 
     if(!capturedLocation){
       const status = document.getElementById('geo-status');
@@ -2042,7 +2019,11 @@
       wizGo(1);
       document.getElementById('story-launcher').scrollIntoView({behavior:'smooth', block:'start'});
     } catch(err){
-      daShowPhoneStatus(err.message || 'Could not submit. Try again.', false);
+      const errEl = document.getElementById('submit-error');
+      errEl.textContent = err.message || 'Could not submit. Please try again.';
+      errEl.style.display = 'inline-block';
+      wizGo(5);
+      errEl.scrollIntoView({behavior:'smooth', block:'center'});
     } finally {
       submitBtn.disabled = false;
     }
@@ -2733,29 +2714,6 @@
     window.addEventListener('resize', () => { if(window.innerWidth > 860) close(); });
   })();
 
-  // ---------- contact: heading opens the form ----------
-  (function contactToggle(){
-    const btn = document.getElementById('contact-launcher');
-    const body = document.getElementById('contact-body');
-    if(!btn || !body) return;
-
-    const open = () => {
-      body.hidden = false;
-      btn.setAttribute('aria-expanded','true');
-      btn.classList.add('open');
-    };
-
-    btn.addEventListener('click', () => {
-      const opening = body.hidden;
-      body.hidden = !opening;
-      btn.setAttribute('aria-expanded', String(opening));
-      btn.classList.toggle('open', opening);
-    });
-
-    // any link pointing at the contact section opens it on arrival
-    document.querySelectorAll('a[href="#contact"]').forEach(a => a.addEventListener('click', open));
-  })();
-
   const CONTACT_INBOX = 'dsn.globaldev@gmail.com';
   const contactForm = document.getElementById('contact-form');
   if(contactForm){
@@ -2815,8 +2773,7 @@
   }
 
   // ---------- collapsible sections ----------
-  // One generic toggle drives Trust in the footer, Data usage, Who reads this,
-  // and both stages of Data access, rather than five near-identical handlers.
+  // Trust still lives inline in the footer as a small disclosure.
   function wireDisclosure(buttonId, panelId){
     const btn = document.getElementById(buttonId);
     const panel = document.getElementById(panelId);
@@ -2832,38 +2789,58 @@
     return { open: () => set(true), close: () => set(false), btn, panel };
   }
 
-  const dTrust     = wireDisclosure('trust-toggle', 'trust-body');
-  const dDataUse   = wireDisclosure('datause-toggle', 'datause-body');
-  const dAudiences = wireDisclosure('audiences-toggle', 'audiences-body');
-  const dAccess    = wireDisclosure('access-toggle', 'access-stage-one');
-  const dAccessTwo = wireDisclosure('access-title-toggle', 'access-stage-two');
+  wireDisclosure('trust-toggle', 'trust-body');
 
-  // Closing the outer Data access panel folds the ordering options with it,
-  // so reopening always starts from the title again.
-  if(dAccess && dAccessTwo){
-    dAccess.btn.addEventListener('click', () => {
-      if(dAccess.panel.hidden) dAccessTwo.close();
-    });
+  // ---------- info modals ----------
+  // Data usage, Who reads this, Data access, and Contact all now live as
+  // modals reached from the footer, rather than expanding in place.
+  let lastInfoTrigger = null;
+
+  function openInfoModal(id){
+    const modal = document.getElementById(id);
+    if(!modal) return;
+    lastInfoTrigger = document.activeElement;
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    const closeBtn = modal.querySelector('.info-close');
+    if(closeBtn) closeBtn.focus();
   }
 
-  // A link or a deep link into a collapsed section opens it on arrival.
-  const DISCLOSURE_TARGETS = {
-    '#trust': dTrust,
-    '#data-use': dDataUse,
-    '#audiences': dAudiences,
-    '#access': dAccess
+  function closeInfoModal(id){
+    const modal = id ? document.getElementById(id) : document.querySelector('.info-modal.open');
+    if(!modal) return;
+    modal.classList.remove('open');
+    if(!document.querySelector('.info-modal.open') && !document.getElementById('map-modal').classList.contains('open')){
+      document.body.style.overflow = '';
+    }
+    if(lastInfoTrigger && lastInfoTrigger.focus) lastInfoTrigger.focus();
+  }
+
+  document.querySelectorAll('.info-modal').forEach(modal => {
+    modal.addEventListener('click', (e) => { if(e.target === modal) closeInfoModal(modal.id); });
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') closeInfoModal();
+  });
+
+  // A deep link into one of these sections opens the matching modal on arrival.
+  const MODAL_TARGETS = {
+    '#data-use': 'modal-data-use',
+    '#audiences': 'modal-audiences',
+    '#access': 'modal-access',
+    '#contact': 'modal-contact'
   };
 
-  function openDisclosureFor(hash){
-    const d = DISCLOSURE_TARGETS[hash];
-    if(d) d.open();
+  function openModalFor(hash){
+    const id = MODAL_TARGETS[hash];
+    if(id) openInfoModal(id);
   }
 
   document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', () => openDisclosureFor(a.getAttribute('href')));
+    a.addEventListener('click', () => openModalFor(a.getAttribute('href')));
   });
-  window.addEventListener('hashchange', () => openDisclosureFor(window.location.hash));
-  openDisclosureFor(window.location.hash);
+  window.addEventListener('hashchange', () => openModalFor(window.location.hash));
+  openModalFor(window.location.hash);
 
   // Expose functions used by inline onclick="" handlers in the HTML.
   // This module's top-level functions are scoped to the module and are
@@ -3037,6 +3014,8 @@
     switchMapTab,
     openMapModal,
     closeMapModal,
+    openInfoModal,
+    closeInfoModal,
     showAudience,
     showAccessTab,
     selectLevel,
