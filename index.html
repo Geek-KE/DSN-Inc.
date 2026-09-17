@@ -472,9 +472,9 @@
   #report-list{max-height:none;}
   .feed-scroller{
     height:calc(100vh - var(--header-h)); height:calc(100dvh - var(--header-h));
-    overflow-y:auto; scroll-snap-type:y proximity; scroll-behavior:smooth;
+    overflow-y:auto; scroll-snap-type:y proximity;
     -webkit-overflow-scrolling:touch; scrollbar-width:none;
-    overscroll-behavior-y:contain;
+    overscroll-behavior-y:auto;
   }
   .feed-scroller::-webkit-scrollbar{display:none;}
 
@@ -589,10 +589,10 @@
 
   /* ---------- no more floating card panels ---------- */
   .story-launcher{
-    background:none; border:none; border-top:2px solid var(--trust); border-bottom:1px solid var(--line);
+    background:none; border:none;
     border-radius:0; box-shadow:none; padding:30px 0; align-items:flex-start;
   }
-  .story-launcher:hover{transform:none; box-shadow:none; border-bottom-color:var(--signal);}
+  .story-launcher:hover{transform:none; box-shadow:none;}
   .story-launcher:hover .story-launcher-title{color:var(--signal);}
   .story-launcher-title{transition:color .15s ease;}
   .story-launcher-chevron{background:none; color:var(--trust); border:2px solid var(--line); border-radius:0; width:44px; height:44px;}
@@ -840,7 +840,6 @@
         <a href="#browse" class="btn btn-ghost">Read what others said</a>
         <button type="button" class="btn btn-ghost" onclick="openMapModal()">View the map</button>
       </div>
-      <p style="margin-top:18px; font-size:.85rem;"><a href="#data-use">How your story is used</a></p>
     </div>
   </div>
 </section>
@@ -1022,7 +1021,7 @@
 <section id="browse" class="feed-section">
   <div class="feed-bar">
     <div class="feed-bar-inner">
-      <div class="feed-bar-title">Stories from the ground</div>
+      <div class="feed-bar-title">Posted and verified stories of interest</div>
       <div class="feed-filters">
         <select id="filter-category" aria-label="Filter by category">
           <option value="">All categories</option>
@@ -1036,7 +1035,6 @@
           <option>Other</option>
         </select>
         <input type="text" id="filter-search" placeholder="Search stories&hellip;" aria-label="Search stories">
-        <button type="button" class="small-btn" onclick="openMapModal()">Map</button>
       </div>
     </div>
   </div>
@@ -1051,23 +1049,13 @@
 
 <footer id="trust">
   <div class="wrap">
-    <div class="footer-disclosure">
-      <button type="button" class="footer-toggle" id="trust-toggle" aria-expanded="false" aria-controls="trust-body">
-        <span class="footer-toggle-word">Trust</span>
-        <span class="footer-toggle-sign" aria-hidden="true">+</span>
-      </button>
-      <div class="footer-panel" id="trust-body" hidden>
-        <h3>A quick look before it goes live.</h3>
-        <p>We confirm each story is genuine and matches where it claims to be from. You stay anonymous to everyone else. Contact details, if given, stay with our team only.</p>
-      </div>
-    </div>
-
     <div class="footer-inner">
       <p>© 2026 Mtaa Pulse, a DSN Group company.</p>
       <div class="footer-links">
         <a href="#report">Report</a>
         <a href="#browse">Stories</a>
-        <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-data-use')">Data usage &amp; privacy</button>
+        <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-trust')">Trust</button>
+        <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-data-use')">How your story is used</button>
         <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-audiences')">Who reads this</button>
         <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-access')">Data access</button>
         <button type="button" class="footer-link-btn" onclick="openInfoModal('modal-contact')">Let's talk about what you need</button>
@@ -1097,6 +1085,22 @@
   </div>
 </div>
 <!-- ---------- Data usage & privacy ---------- -->
+<!-- ---------- Trust ---------- -->
+<div class="info-modal" id="modal-trust" role="dialog" aria-modal="true" aria-label="Trust">
+  <div class="info-panel">
+    <div class="info-panel-head">
+      <span class="reveal-head-text">
+        <span class="section-kicker">Trust</span>
+        <h3>A quick look before it goes live.</h3>
+      </span>
+      <button class="info-close" onclick="closeInfoModal('modal-trust')" aria-label="Close">&times;</button>
+    </div>
+    <div class="info-panel-body">
+      <p>We confirm each story is genuine and matches where it claims to be from. You stay anonymous to everyone else. Contact details, if given, stay with our team only.</p>
+    </div>
+  </div>
+</div>
+
 <div class="info-modal" id="modal-data-use" role="dialog" aria-modal="true" aria-label="Data usage and privacy">
   <div class="info-panel">
     <div class="info-panel-head">
@@ -2789,7 +2793,7 @@
     return { open: () => set(true), close: () => set(false), btn, panel };
   }
 
-  wireDisclosure('trust-toggle', 'trust-body');
+
 
   // ---------- info modals ----------
   // Data usage, Who reads this, Data access, and Contact all now live as
