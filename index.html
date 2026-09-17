@@ -802,6 +802,16 @@
     .reveal-body{padding-top:24px;}
   }
 
+
+  .toast-success{
+    position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-20px);
+    background:var(--verified, #1f8a4c); color:#fff; padding:14px 22px; border-radius:8px;
+    font-weight:600; font-size:.95rem; box-shadow:0 8px 24px rgba(0,0,0,.2);
+    z-index:9999; display:flex; align-items:center; gap:10px; opacity:0;
+    transition:opacity .25s ease, transform .25s ease; pointer-events:none; max-width:90vw;
+  }
+  .toast-success.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast-success svg{flex:0 0 auto;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -812,6 +822,10 @@
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js';document.head.appendChild(s);"></script>
 </head>
 <body>
+<div id="global-toast" class="toast-success" role="status" aria-live="polite">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span id="global-toast-text"></span>
+</div>
 
 <header class="site-nav">
   <div class="nav-inner">
@@ -1428,6 +1442,18 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_wTfC87Rv20ibZF4PdCMGIg_QhbIroRf';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // ---------- global success toast (visible no matter where the page/wizard jumps to) ----------
+  let toastTimer = null;
+  function showSuccessToast(text, duration = 4500){
+    const toast = document.getElementById('global-toast');
+    const textEl = document.getElementById('global-toast-text');
+    if(!toast || !textEl) return;
+    textEl.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> toast.classList.remove('show'), duration);
+  }
+
   // Edge function base (same project, no separate domain needed)
   const FN = (name) => `${SUPABASE_URL}/functions/v1/${name}`;
 
@@ -2016,6 +2042,7 @@
       msg.textContent = 'Story submitted. It is now awaiting review.';
       msg.style.display = 'inline';
       setTimeout(()=> msg.style.display = 'none', 4000);
+      showSuccessToast('✅ Story submitted — it is now awaiting review.');
 
       this.reset();
       ['photo'].forEach(kind => {
