@@ -953,7 +953,7 @@
               <div class="rec-timer" id="video-timer" style="display:none;"><span class="rec-dot"></span><span id="video-timer-text">0:00</span></div>
               <p class="cam-error" id="video-cam-error"></p>
             </div>
-            <div class="hint">Required. A short clip, up to 30 seconds, showing what you are describing. Hold your phone <b>sideways (landscape)</b> while recording — upright/portrait clips will be rejected.</div>
+            <div class="hint">Required. A short clip, up to 30 seconds, showing what you are describing.</div>
           </div>
 
           <div class="field">
@@ -1863,16 +1863,6 @@
       document.getElementById('video-retake-btn').style.display = 'inline-block';
       document.getElementById('video-timer').style.display = 'none';
 
-      // Reject portrait clips - the recording must be landscape.
-      preview.onloadedmetadata = () => {
-        if(preview.videoHeight > preview.videoWidth){
-          camError('video', 'That was recorded upright (portrait). Please rotate your phone sideways to landscape and record again.');
-          capturedVideoBlob = null;
-          preview.pause?.();
-          preview.style.display = 'none';
-          preview.removeAttribute('src');
-        }
-      };
     };
     mediaRecorder.start();
     document.getElementById('video-record-btn').style.display = 'none';
@@ -1979,7 +1969,7 @@
       return;
     }
     if(!capturedVideoBlob){
-      camError('video', 'A short landscape video (up to 30 seconds) is required before you can submit.');
+      camError('video', 'A short video (up to 30 seconds) is required before you can submit.');
       wizGo(3);
       document.getElementById('video-camera-box').scrollIntoView({behavior:'smooth', block:'center'});
       return;
@@ -2655,7 +2645,7 @@
     }
     if(n === 3){
       // A video is required for a story to be checkable; a photo is a nice-to-have extra.
-      if(!capturedVideoBlob) return 'A short landscape video (up to 30 seconds) is required for your story.';
+      if(!capturedVideoBlob) return 'A short video (up to 30 seconds) is required for your story.';
     }
     if(n === 4){
       if(v('r-phone').replace(/\D/g,'').length < 9) return 'Enter a phone number we can reach you on.';
