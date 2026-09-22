@@ -716,6 +716,73 @@
   .feed-empty{background:var(--sky); justify-content:center; align-items:center;}
   .feed-empty .feed-content{display:block; text-align:center; padding:0 24px;}
 
+  /* ================= FEED ACTION RAIL (like/comment/share/save/bookmark) ================= */
+  .feed-mute-btn{
+    position:absolute; top:16px; right:16px; z-index:4; width:38px; height:38px; border-radius:50%;
+    background:rgba(4,20,28,.55); border:1px solid rgba(255,255,255,.25); color:#fff; font-size:1.05rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px);
+  }
+  .feed-actions{
+    position:absolute; right:10px; bottom:96px; z-index:4; display:flex; flex-direction:column;
+    align-items:center; gap:20px;
+  }
+  .feed-action{
+    background:none; border:none; color:#fff; display:flex; flex-direction:column; align-items:center;
+    gap:4px; cursor:pointer; font-family:inherit; padding:2px;
+  }
+  .feed-action .action-icon{
+    width:46px; height:46px; border-radius:50%; background:rgba(4,20,28,.5); border:1px solid rgba(255,255,255,.18);
+    display:flex; align-items:center; justify-content:center; font-size:1.35rem; backdrop-filter:blur(4px);
+    transition:transform .15s ease, background .15s ease, color .15s ease;
+  }
+  .feed-action:active .action-icon{transform:scale(.88);}
+  .feed-action .action-count, .feed-action .action-label{font-size:.72rem; font-weight:700; text-shadow:0 1px 6px rgba(0,0,0,.6);}
+  .feed-action.action-like.active .action-icon{background:rgba(220,53,69,.92); color:#fff;}
+  .feed-action.action-bookmark.active .action-icon{background:rgba(30,136,168,.92); color:#fff;}
+
+  /* toast */
+  #mp-toast{
+    position:fixed; left:50%; bottom:38px; transform:translate(-50%,12px); z-index:200;
+    background:rgba(4,20,28,.92); color:#fff; padding:10px 20px; border-radius:6px; font-size:.88rem;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  #mp-toast.show{opacity:1; transform:translate(-50%,0);}
+
+  /* comments bottom sheet */
+  .comments-sheet{position:fixed; inset:0; z-index:150; display:none;}
+  .comments-sheet.open{display:block;}
+  .comments-sheet-backdrop{position:absolute; inset:0; background:rgba(4,20,28,.55);}
+  .comments-sheet-panel{
+    position:absolute; left:0; right:0; bottom:0; max-height:78vh; background:#fff; border-radius:18px 18px 0 0;
+    display:flex; flex-direction:column; box-shadow:0 -12px 40px rgba(0,0,0,.3);
+    animation:sheet-up .22s ease;
+  }
+  @keyframes sheet-up{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .comments-sheet-head{
+    display:flex; align-items:center; justify-content:space-between; padding:16px 20px;
+    border-bottom:1px solid var(--line); font-weight:700; color:var(--trust); font-family:'Outfit', system-ui, sans-serif;
+  }
+  .comments-close-btn{background:none; border:none; font-size:1.5rem; line-height:1; color:var(--ink-soft); cursor:pointer;}
+  .comments-list{flex:1; overflow-y:auto; padding:8px 20px;}
+  .comments-empty{color:var(--ink-soft); font-size:.9rem; padding:24px 0; text-align:center;}
+  .comment-item{padding:12px 0; border-bottom:1px solid var(--line);}
+  .comment-head{display:flex; justify-content:space-between; gap:10px; align-items:baseline;}
+  .comment-head strong{font-size:.9rem; color:var(--ink);}
+  .comment-time{font-size:.74rem; color:#6f8b96; flex-shrink:0;}
+  .comment-body{margin:4px 0 0; font-size:.9rem; color:var(--ink-soft);}
+  .comment-compose{padding:14px 20px 20px; border-top:1px solid var(--line); flex-shrink:0;}
+  .comment-compose input, .comment-compose textarea{
+    width:100%; padding:9px 12px; border:1.5px solid var(--line); border-radius:8px; font-size:.9rem;
+    margin-bottom:10px; color:var(--ink); font-family:inherit; resize:vertical;
+  }
+  .comment-compose input:focus, .comment-compose textarea:focus{border-color:var(--signal); outline:none;}
+  .comment-loc-row{display:flex; align-items:center; gap:8px; font-size:.84rem; color:var(--ink-soft); margin-bottom:4px;}
+  .comment-loc-row input{width:auto; margin:0;}
+  .comment-loc-status{font-size:.78rem; color:var(--verified); min-height:1.1em; margin:0 0 4px;}
+  .comment-disclosure{font-size:.72rem; color:#6f8b96; margin:0 0 12px;}
+  .comment-compose-row{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .comment-submit-status{font-size:.78rem; color:var(--warn);}
+
   /* ---------- admin orders ---------- */
   .admin-order-lines{font-size:.88rem; color:var(--ink); line-height:1.7;}
   .admin-order-lines div{padding:2px 0; border-bottom:1px dotted var(--line);}
@@ -1097,6 +1164,7 @@
       <div class="map-view" id="map-3d"></div>
       <div class="map-legend">
         <span><span class="legend-dot" style="background:var(--verified);"></span> Reported story</span>
+        <span><span class="legend-dot" style="background:#1e88a8;"></span> Comment location (shared by choice)</span>
         <span><span class="legend-dot" style="background:#b9c9d1;"></span> No reports yet</span>
       </div>
     </div>
@@ -1442,6 +1510,20 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_wTfC87Rv20ibZF4PdCMGIg_QhbIroRf';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  // ---------- anonymous device id (no login required) ----------
+  // Used only to let someone like/bookmark a story once and to attach a
+  // comment to "this browser" so it can show as theirs. It is a random id,
+  // not tied to identity, stored in this browser only.
+  function getDeviceId(){
+    let id = localStorage.getItem('mp_device_id');
+    if(!id){
+      id = (crypto.randomUUID ? crypto.randomUUID() : 'dev-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+      localStorage.setItem('mp_device_id', id);
+    }
+    return id;
+  }
+  const deviceId = getDeviceId();
+
   // ---------- global success toast (visible no matter where the page/wizard jumps to) ----------
   let toastTimer = null;
   function showSuccessToast(text, duration = 4500){
@@ -1477,6 +1559,8 @@
 
   let reports = [];
 
+  const engagementState = { counts: {}, liked: new Set(), bookmarked: new Set() };
+
   async function loadReports(){
     const { data, error } = await supabase
       .from('reports_public')
@@ -1485,12 +1569,282 @@
       .order('created_at', { ascending: false });
     if(error){ console.error(error); return; }
     reports = (data || []).map(r => ({
-      title: r.title, category: r.category, desc: r.description,
+      id: r.id, title: r.title, category: r.category, desc: r.description,
       county: r.county, verified: r.verified, pseudonym: r.pseudonym,
       photo: r.photo_url, video: r.video_url || null, lat: null, lng: null
     }));
     renderReportList();
     renderMapMarkers();
+    loadEngagementState();
+    loadCommentLocations();
+  }
+
+  async function loadEngagementState(){
+    const ids = reports.map(r => r.id).filter(Boolean);
+    if(!ids.length) return;
+    try{
+      const [{ data: counts }, { data: myLikes }, { data: myBookmarks }] = await Promise.all([
+        supabase.from('report_engagement_counts').select('*').in('report_id', ids),
+        supabase.from('report_likes').select('report_id').eq('device_id', deviceId).in('report_id', ids),
+        supabase.from('report_bookmarks').select('report_id').eq('device_id', deviceId).in('report_id', ids)
+      ]);
+      (counts||[]).forEach(c => { engagementState.counts[c.report_id] = c; });
+      (myLikes||[]).forEach(l => engagementState.liked.add(l.report_id));
+      (myBookmarks||[]).forEach(b => engagementState.bookmarked.add(b.report_id));
+      refreshEngagementUI();
+    } catch(err){ console.error('Could not load engagement state', err); }
+  }
+
+  function refreshEngagementUI(){
+    document.querySelectorAll('.feed-card[data-id]').forEach(card => {
+      const id = card.getAttribute('data-id');
+      const c = engagementState.counts[id] || { likes_count: 0, comments_count: 0 };
+      const likeBtn = card.querySelector('.action-like');
+      const bookmarkBtn = card.querySelector('.action-bookmark');
+      if(likeBtn){
+        const isLiked = engagementState.liked.has(id);
+        likeBtn.classList.toggle('active', isLiked);
+        likeBtn.setAttribute('aria-pressed', String(isLiked));
+        likeBtn.querySelector('.action-icon').textContent = isLiked ? '♥' : '♡';
+        likeBtn.querySelector('.action-count').textContent = formatCount(c.likes_count);
+      }
+      if(bookmarkBtn){
+        const isBookmarked = engagementState.bookmarked.has(id);
+        bookmarkBtn.classList.toggle('active', isBookmarked);
+        bookmarkBtn.setAttribute('aria-pressed', String(isBookmarked));
+      }
+      const commentBtn = card.querySelector('.action-comment .action-count');
+      if(commentBtn) commentBtn.textContent = formatCount(c.comments_count);
+    });
+  }
+
+  function formatCount(n){
+    n = n || 0;
+    if(n < 1000) return String(n);
+    if(n < 1000000) return (n/1000).toFixed(n % 1000 >= 100 ? 1 : 0) + 'K';
+    return (n/1000000).toFixed(1) + 'M';
+  }
+
+  function reportById(id){ return reports.find(r => String(r.id) === String(id)); }
+
+  // ---------- like ----------
+  async function toggleLike(id){
+    if(!id) return;
+    const already = engagementState.liked.has(id);
+    const c = engagementState.counts[id] || { likes_count: 0, comments_count: 0 };
+    // Optimistic UI update, then reconcile with the server.
+    if(already){
+      engagementState.liked.delete(id);
+      c.likes_count = Math.max(0, (c.likes_count||0) - 1);
+    } else {
+      engagementState.liked.add(id);
+      c.likes_count = (c.likes_count||0) + 1;
+    }
+    engagementState.counts[id] = c;
+    refreshEngagementUI();
+    try{
+      if(already){
+        await supabase.from('report_likes').delete().eq('report_id', id).eq('device_id', deviceId);
+      } else {
+        await supabase.from('report_likes').insert({ report_id: id, device_id: deviceId });
+      }
+    } catch(err){
+      // Roll back on failure.
+      if(already){ engagementState.liked.add(id); c.likes_count++; }
+      else { engagementState.liked.delete(id); c.likes_count = Math.max(0, c.likes_count-1); }
+      refreshEngagementUI();
+      console.error('Like failed', err);
+    }
+  }
+
+  // ---------- bookmark ----------
+  async function toggleBookmark(id){
+    if(!id) return;
+    const already = engagementState.bookmarked.has(id);
+    if(already) engagementState.bookmarked.delete(id); else engagementState.bookmarked.add(id);
+    refreshEngagementUI();
+    try{
+      if(already) await supabase.from('report_bookmarks').delete().eq('report_id', id).eq('device_id', deviceId);
+      else await supabase.from('report_bookmarks').insert({ report_id: id, device_id: deviceId });
+    } catch(err){
+      if(already) engagementState.bookmarked.add(id); else engagementState.bookmarked.delete(id);
+      refreshEngagementUI();
+      console.error('Bookmark failed', err);
+    }
+  }
+
+  // ---------- share ----------
+  async function shareReport(id){
+    const r = reportById(id);
+    if(!r) return;
+    const url = `${location.origin}${location.pathname}#story-${id}`;
+    const shareData = { title: r.title, text: `${r.title} — via Mtaa Pulse`, url };
+    if(navigator.share){
+      try{ await navigator.share(shareData); return; } catch(_e){ /* user cancelled or unsupported, fall through */ }
+    }
+    try{
+      await navigator.clipboard.writeText(url);
+      toast('Link copied to clipboard');
+    } catch(_e){
+      toast(url);
+    }
+  }
+
+  function toast(msg){
+    let el = document.getElementById('mp-toast');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'mp-toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  // ---------- download ----------
+  async function downloadMedia(id){
+    const r = reportById(id);
+    if(!r) return;
+    const srcUrl = r.video || r.photo;
+    if(!srcUrl) return;
+    try{
+      const resp = await fetch(srcUrl);
+      const blob = await resp.blob();
+      const ext = r.video ? (blob.type.includes('mp4') ? 'mp4' : 'webm') : 'jpg';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `mtaa-pulse-${id}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    } catch(err){
+      console.error('Download failed', err);
+      window.open(srcUrl, '_blank');
+    }
+  }
+
+  // ---------- comments ----------
+  let commentsOpenForId = null;
+  let commentLocationOptIn = false;
+  let commentLocationCoords = null;
+
+  function openComments(id){
+    commentsOpenForId = id;
+    document.getElementById('comments-sheet').classList.add('open');
+    document.getElementById('comments-sheet').setAttribute('aria-hidden', 'false');
+    document.getElementById('comment-body').value = '';
+    document.getElementById('comment-name').value = '';
+    commentLocationOptIn = false;
+    commentLocationCoords = null;
+    document.getElementById('comment-loc-toggle').checked = false;
+    loadComments(id);
+  }
+
+  function closeComments(){
+    document.getElementById('comments-sheet').classList.remove('open');
+    document.getElementById('comments-sheet').setAttribute('aria-hidden', 'true');
+    commentsOpenForId = null;
+  }
+
+  async function loadComments(id){
+    const list = document.getElementById('comments-list');
+    list.innerHTML = '<div class="comments-empty">Loading comments…</div>';
+    try{
+      const { data, error } = await supabase
+        .from('report_comments')
+        .select('id, display_name, body, created_at')
+        .eq('report_id', id)
+        .eq('hidden', false)
+        .order('created_at', { ascending: false });
+      if(error) throw error;
+      if(!data || !data.length){
+        list.innerHTML = '<div class="comments-empty">No comments yet. Be the first to say something.</div>';
+        return;
+      }
+      list.innerHTML = data.map(c => `
+        <div class="comment-item">
+          <div class="comment-head"><strong>${escapeHTML(c.display_name || 'Anonymous')}</strong><span class="comment-time">${timeAgo(c.created_at)}</span></div>
+          <p class="comment-body">${escapeHTML(c.body)}</p>
+        </div>`).join('');
+    } catch(err){
+      list.innerHTML = `<div class="comments-empty">Couldn't load comments: ${escapeHTML(err.message)}</div>`;
+    }
+  }
+
+  function timeAgo(iso){
+    const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+    if(s < 60) return 'just now';
+    if(s < 3600) return Math.floor(s/60) + 'm';
+    if(s < 86400) return Math.floor(s/3600) + 'h';
+    return Math.floor(s/86400) + 'd';
+  }
+
+  function toggleCommentLocation(checked){
+    commentLocationOptIn = checked;
+    const status = document.getElementById('comment-loc-status');
+    if(!checked){ commentLocationCoords = null; status.textContent = ''; return; }
+    if(!navigator.geolocation){
+      status.textContent = "This browser can't share location.";
+      document.getElementById('comment-loc-toggle').checked = false;
+      commentLocationOptIn = false;
+      return;
+    }
+    status.textContent = 'Getting your location…';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        commentLocationCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        status.textContent = 'Location will be attached to this comment.';
+      },
+      () => {
+        status.textContent = "Couldn't get your location — comment will post without it.";
+        document.getElementById('comment-loc-toggle').checked = false;
+        commentLocationOptIn = false;
+      },
+      { timeout: 8000 }
+    );
+  }
+
+  async function submitComment(){
+    if(!commentsOpenForId) return;
+    const body = document.getElementById('comment-body').value.trim();
+    const name = document.getElementById('comment-name').value.trim();
+    const statusEl = document.getElementById('comment-submit-status');
+    if(!body){ statusEl.textContent = 'Write something first.'; return; }
+    statusEl.textContent = 'Posting…';
+    try{
+      const insertRow = {
+        report_id: commentsOpenForId,
+        device_id: deviceId,
+        display_name: name || null,
+        body
+      };
+      if(commentLocationOptIn && commentLocationCoords){
+        insertRow.shared_lat = commentLocationCoords.lat;
+        insertRow.shared_lng = commentLocationCoords.lng;
+      }
+      const { data, error } = await supabase.from('report_comments').insert(insertRow).select().single();
+      if(error) throw error;
+
+      // Disclosed, coarse (city-level) location for regional analytics — see
+      // the footnote under the comment box. Runs server-side so the browser
+      // never has to expose the visitor's IP address itself.
+      callFn('log-comment-location', { comment_id: data.id }).catch(()=>{});
+
+      const c = engagementState.counts[commentsOpenForId] || { likes_count: 0, comments_count: 0 };
+      c.comments_count = (c.comments_count||0) + 1;
+      engagementState.counts[commentsOpenForId] = c;
+      refreshEngagementUI();
+
+      document.getElementById('comment-body').value = '';
+      statusEl.textContent = '';
+      loadComments(commentsOpenForId);
+      if(commentLocationOptIn && commentLocationCoords) loadCommentLocations();
+    } catch(err){
+      statusEl.textContent = err.message || 'Could not post your comment. Try again.';
+    }
   }
 
   function feedItemHTML(r, index){
@@ -1502,9 +1856,30 @@
       ? `<video class="feed-media" src="${r.video}" playsinline muted loop preload="metadata"></video>`
       : (r.photo ? `<img class="feed-media" src="${r.photo}" alt="" loading="lazy" decoding="async">` : '');
     const hasMedia = !!(r.video || r.photo);
+    const hasVideo = !!r.video;
     return `
-      <article class="feed-card${hasMedia ? ' has-media' : ' no-media'}" data-index="${index}">
+      <article class="feed-card${hasMedia ? ' has-media' : ' no-media'}" data-index="${index}" data-id="${r.id || ''}">
         <div class="feed-stage">${media || `<div class="feed-noimage"><span class="feed-noimage-icon">${icon}</span><span>Written report</span></div>`}</div>
+
+        ${hasVideo ? `<button type="button" class="feed-mute-btn" aria-label="Toggle sound">🔇</button>` : ''}
+
+        <div class="feed-actions" role="group" aria-label="Story actions">
+          <button type="button" class="feed-action action-like" onclick="toggleLike('${r.id}')" aria-pressed="false">
+            <span class="action-icon">♡</span><span class="action-count">0</span>
+          </button>
+          <button type="button" class="feed-action action-comment" onclick="openComments('${r.id}')">
+            <span class="action-icon">💬</span><span class="action-count">0</span>
+          </button>
+          <button type="button" class="feed-action action-share" onclick="shareReport('${r.id}')">
+            <span class="action-icon">↗</span><span class="action-label">Share</span>
+          </button>
+          ${hasMedia ? `<button type="button" class="feed-action action-download" onclick="downloadMedia('${r.id}')">
+            <span class="action-icon">⭳</span><span class="action-label">Save</span>
+          </button>` : ''}
+          <button type="button" class="feed-action action-bookmark" onclick="toggleBookmark('${r.id}')" aria-pressed="false">
+            <span class="action-icon">🔖</span><span class="action-label">Bookmark</span>
+          </button>
+        </div>
 
         <div class="feed-caption" data-open="false">
           <button type="button" class="feed-caption-bar" aria-expanded="false">
@@ -1545,10 +1920,15 @@
     }
     list.innerHTML = filtered.map((r,i) => feedItemHTML(r,i)).join('');
     setupFeedAutoplay();
+    setupMuteButtons();
+    refreshEngagementUI();
   }
 
-  // Plays the clip of whichever card is currently filling the screen, pauses the rest.
+  // Plays the clip of whichever card is currently filling the screen, pauses
+  // and rewinds the rest — same feel as TikTok: only one clip is ever
+  // playing, and scrolling back to an earlier one always starts it from 0.
   let feedObserver = null;
+  let userUnmuted = false; // once someone taps to unmute, keep that preference for the session
   function setupFeedAutoplay(){
     if(feedObserver) feedObserver.disconnect();
     if(!('IntersectionObserver' in window)) return;
@@ -1556,11 +1936,27 @@
       entries.forEach(en => {
         const v = en.target.querySelector('video.feed-media');
         if(!v) return;
-        if(en.isIntersecting && en.intersectionRatio > 0.6){ v.play().catch(()=>{}); }
-        else { v.pause(); }
+        if(en.isIntersecting && en.intersectionRatio > 0.6){
+          v.muted = !userUnmuted;
+          const p = v.play();
+          if(p && p.catch) p.catch(()=>{ v.muted = true; v.play().catch(()=>{}); });
+        } else {
+          v.pause();
+          v.currentTime = 0;
+        }
       });
     }, { threshold: [0, 0.6, 1], root: document.getElementById('report-list') });
     document.querySelectorAll('#report-list .feed-card').forEach(c => feedObserver.observe(c));
+  }
+
+  function setupMuteButtons(){
+    document.querySelectorAll('#report-list .feed-mute-btn').forEach(btn => {
+      btn.onclick = () => {
+        userUnmuted = !userUnmuted;
+        document.querySelectorAll('#report-list video.feed-media').forEach(v => v.muted = !userUnmuted);
+        document.querySelectorAll('#report-list .feed-mute-btn').forEach(b => b.textContent = userUnmuted ? '🔊' : '🔇');
+      };
+    });
   }
 
   // One delegated listener for every caption, rather than one per card.
@@ -2262,6 +2658,23 @@
   // Draws every county as a dim marker (unmapped) or a live pin once it has
   // at least one published story (mapped). Individual story pins use the
   // precise coordinates captured on submission where available.
+  let commentLocations = [];
+  async function loadCommentLocations(){
+    try{
+      const { data, error } = await supabase
+        .from('report_comments')
+        .select('id, report_id, shared_lat, shared_lng, body, created_at')
+        .not('shared_lat', 'is', null)
+        .not('shared_lng', 'is', null)
+        .eq('hidden', false);
+      if(error) throw error;
+      commentLocations = data || [];
+      renderMapMarkers();
+    } catch(err){
+      console.error('Could not load comment locations', err);
+    }
+  }
+
   function renderMapMarkers(){
     if(leafletMarkerLayer){
       leafletMarkerLayer.clearLayers();
@@ -2278,6 +2691,13 @@
         if(!pos) return;
         L.circleMarker(pos, {radius:7, color:'#1e7a5c', fillColor:'#1e7a5c', fillOpacity:.85, weight:2})
           .bindPopup(`<strong>${escapeHTML(r.title)}</strong><br>${escapeHTML(r.category)}<br>${escapeHTML(r.county)}`)
+          .addTo(leafletMarkerLayer);
+      });
+      // Comment locations get their own color (--signal blue) so they're never
+      // mistaken for verified report pins (green) at a glance.
+      commentLocations.forEach(c => {
+        L.circleMarker([c.shared_lat, c.shared_lng], {radius:5, color:'#1e88a8', fillColor:'#1e88a8', fillOpacity:.85, weight:2})
+          .bindPopup(`<strong>Comment</strong><br>${escapeHTML((c.body||'').slice(0,80))}`)
           .addTo(leafletMarkerLayer);
       });
     }
@@ -2305,6 +2725,17 @@
         el.style.background = '#1e7a5c'; el.style.border = '2px solid #fff';
         const popup = new maplibregl.Popup({offset:14}).setHTML(`<strong>${escapeHTML(r.title)}</strong><br>${escapeHTML(r.category)}<br>${escapeHTML(r.county)}`);
         const marker = new maplibregl.Marker({element: el}).setLngLat(pos).setPopup(popup).addTo(maplibreMap);
+        maplibreMarkers.push(marker);
+      });
+      // Comment locations: distinct blue diamond so they read as a different
+      // layer from the green (verified report) pins above.
+      commentLocations.forEach(c => {
+        const el = document.createElement('div');
+        el.style.width = '11px'; el.style.height = '11px'; el.style.borderRadius = '3px';
+        el.style.transform = 'rotate(45deg)';
+        el.style.background = '#1e88a8'; el.style.border = '2px solid #fff';
+        const popup = new maplibregl.Popup({offset:14}).setHTML(`<strong>Comment</strong><br>${escapeHTML((c.body||'').slice(0,80))}`);
+        const marker = new maplibregl.Marker({element: el}).setLngLat([c.shared_lng, c.shared_lat]).setPopup(popup).addTo(maplibreMap);
         maplibreMarkers.push(marker);
       });
     }
@@ -3079,10 +3510,44 @@
     daVerifyCodeOtp,
     daSubmitRequest,
     daVerifyPayment,
-    daVerifyPaymentOtp
+    daVerifyPaymentOtp,
+    toggleLike,
+    toggleBookmark,
+    shareReport,
+    downloadMedia,
+    openComments,
+    closeComments,
+    toggleCommentLocation,
+    submitComment
   });
 </script>
 
+
+<!-- ---------- Comments bottom sheet ---------- -->
+<div id="comments-sheet" class="comments-sheet" aria-hidden="true">
+  <div class="comments-sheet-backdrop" onclick="closeComments()"></div>
+  <div class="comments-sheet-panel" role="dialog" aria-label="Comments">
+    <div class="comments-sheet-head">
+      <span>Comments</span>
+      <button type="button" class="comments-close-btn" onclick="closeComments()" aria-label="Close comments">&times;</button>
+    </div>
+    <div id="comments-list" class="comments-list"></div>
+    <div class="comment-compose">
+      <input type="text" id="comment-name" placeholder="Name (optional)" maxlength="60">
+      <textarea id="comment-body" placeholder="Add a comment…" maxlength="500" rows="2"></textarea>
+      <label class="comment-loc-row">
+        <input type="checkbox" id="comment-loc-toggle" onchange="toggleCommentLocation(this.checked)">
+        <span>Share my location with this comment</span>
+      </label>
+      <p class="comment-loc-status" id="comment-loc-status"></p>
+      <p class="comment-disclosure">Approximate location (city-level, from your connection) may also be recorded for regional insights.</p>
+      <div class="comment-compose-row">
+        <span class="comment-submit-status" id="comment-submit-status"></span>
+        <button type="button" class="btn btn-solid" onclick="submitComment()">Post</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ---------- Hidden admin panel: only shown via #admin in the URL ---------- -->
 <div id="admin-overlay">
