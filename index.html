@@ -475,47 +475,76 @@
 
   #report-list{max-height:none;}
   .feed-scroller{
-    height:calc(100vh - var(--header-h)); height:calc(100dvh - var(--header-h));
-    overflow-y:auto; scroll-snap-type:y proximity;
-    -webkit-overflow-scrolling:touch; scrollbar-width:none;
-    overscroll-behavior-y:auto;
+    height:auto; overflow-y:visible; scroll-snap-type:none;
+    max-width:640px; margin:0 auto; padding:0 18px;
   }
-  .feed-scroller::-webkit-scrollbar{display:none;}
 
   .feed-card{
-    position:relative; height:calc(100vh - var(--header-h)); height:calc(100dvh - var(--header-h));
-    scroll-snap-align:center; scroll-snap-stop:normal;
-    display:flex; align-items:flex-end; overflow:hidden;
-    background:linear-gradient(160deg,#0b4f6c 0%, #12303d 100%);
-    transform:translateZ(0);
+    position:relative; height:auto; scroll-snap-align:none;
+    display:block; overflow:visible;
+    background:none; padding:28px 0; border-bottom:1px solid var(--line);
   }
-  .feed-media-wrap{position:absolute; inset:0;}
-  .feed-media{width:100%; height:100%; object-fit:cover; display:block;}
-  .feed-scrim{position:absolute; inset:0; background:linear-gradient(to top, rgba(4,20,28,.94) 0%, rgba(4,20,28,.62) 38%, rgba(4,20,28,.18) 72%, rgba(4,20,28,.35) 100%);}
-  .feed-card:not(.has-media) .feed-scrim{background:linear-gradient(to top, rgba(4,20,28,.6), rgba(4,20,28,.1));}
-  .feed-content{position:relative; z-index:2; width:100%; max-width:1180px; margin:0 auto; padding:0 24px 92px;}
-  .feed-tag{
-    display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.16); backdrop-filter:blur(6px);
-    color:#fff; padding:7px 16px; border-radius:5px; font-size:.82rem; font-weight:700; margin-bottom:16px;
-    border:1px solid rgba(255,255,255,.22);
+  .feed-card:first-child{padding-top:8px;}
+  .feed-card:last-child{border-bottom:none;}
+  .feed-card .feed-tag{
+    display:inline-flex; align-items:center; gap:8px; background:var(--sky);
+    color:var(--trust); padding:6px 14px; font-size:.78rem; font-weight:700; margin:0 0 10px;
+    border:1px solid var(--line);
   }
-  .feed-tag-icon{font-size:1rem;}
-  .feed-title{color:#fff; font-size:clamp(1.7rem,3.6vw,2.9rem); margin:0 0 14px; max-width:20ch; line-height:1.12; text-shadow:0 2px 20px rgba(0,0,0,.35);}
-  .feed-desc{color:#e3f0f6; font-size:clamp(1rem,1.5vw,1.12rem); max-width:56ch; margin:0 0 20px; text-shadow:0 1px 12px rgba(0,0,0,.4);}
-  .feed-footer{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
-  .feed-footer .badge{background:rgba(30,122,92,.9); color:#fff; border:none; border-radius:5px; padding:5px 14px; font-size:.75rem;}
-  .feed-footer .coord{color:#c4dce7; font-size:.86rem;}
-  .feed-hint-scroll{
-    position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:3;
-    color:rgba(255,255,255,.65); font-size:1.4rem; animation:bob 2s ease-in-out infinite;
+  .feed-tag-icon{font-size:.95rem;}
+  .feed-card .feed-title{
+    color:var(--ink); font-size:1.28rem; font-weight:700; margin:0 0 14px; max-width:none;
+    line-height:1.28; text-shadow:none; font-family:'Outfit', system-ui, sans-serif;
   }
-  @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,9px);}}
-  .feed-card:last-child .feed-hint-scroll{display:none;}
-  .feed-empty{background:var(--sky); align-items:center; justify-content:center; text-align:center;}
-  .feed-empty .feed-title, .feed-empty .feed-desc{color:var(--trust); text-shadow:none;}
-  .feed-empty .feed-desc{color:var(--ink-soft); margin-left:auto; margin-right:auto;}
-  .feed-empty .feed-content{padding-bottom:0; text-align:center;}
+  .feed-media-wrap{display:none;}
+  .feed-stage{
+    position:relative; background:#04141c; border-radius:6px; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+  }
+  /* natural size, never cropped, never forced full-screen */
+  .feed-media{width:100%; height:auto; max-height:72vh; object-fit:contain; display:block; background:#04141c;}
+  .feed-media-fallback{
+    padding:40px 20px; text-align:center; color:#8fb4c4; font-size:.88rem; background:#0b2530; width:100%;
+  }
+  .feed-noimage{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    color:var(--ink-soft); font-size:.92rem; font-weight:600; background:var(--sky);
+    border:1px dashed var(--line); border-radius:6px; padding:36px 20px; margin-bottom:16px;
+  }
+  .feed-noimage-icon{font-size:2.4rem;}
+  .feed-scrim{display:none;}
+  .feed-desc{color:var(--ink-soft); font-size:.98rem; max-width:70ch; margin:0 0 14px; text-shadow:none;}
+  .feed-footer{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px;}
+  .feed-footer .badge{background:var(--verified-bg); color:var(--verified); border:none; padding:5px 14px; font-size:.75rem;}
+  .feed-footer .coord{color:var(--ink-soft); font-size:.86rem;}
+  .feed-content{display:none;}
+  .feed-hint-scroll{display:none;}
+  .feed-empty{background:none; text-align:center; padding:40px 0;}
+  .feed-empty .feed-content{display:block; text-align:center; padding:0 24px;}
   .pending-box{display:none !important;}
+
+  /* ================= FEED ACTION BAR (like/comment/share/save/bookmark) ================= */
+  .feed-mute-btn{
+    position:absolute; top:12px; right:12px; z-index:4; width:36px; height:36px; border-radius:50%;
+    background:rgba(4,20,28,.55); border:1px solid rgba(255,255,255,.25); color:#fff; font-size:1rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px);
+  }
+  .feed-actionbar{
+    display:flex; align-items:center; gap:26px; flex-wrap:wrap;
+  }
+  .feed-action{
+    background:none; border:none; color:var(--ink-soft); display:flex; flex-direction:row; align-items:center;
+    gap:7px; cursor:pointer; font-family:inherit; padding:4px 2px;
+  }
+  .feed-action .action-icon{
+    width:34px; height:34px; border-radius:50%; background:var(--sky); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:1.05rem;
+    transition:transform .15s ease, background .15s ease, color .15s ease;
+  }
+  .feed-action:active .action-icon{transform:scale(.88);}
+  .feed-action .action-count, .feed-action .action-label{font-size:.82rem; font-weight:600;}
+  .feed-action.action-like.active .action-icon{background:rgba(220,53,69,.92); color:#fff; border-color:transparent;}
+  .feed-action.action-bookmark.active .action-icon{background:rgba(30,136,168,.92); color:#fff; border-color:transparent;}
 
   /* ================= ORDER FORM ================= */
   #access .access-layout{gap:48px;}
@@ -668,77 +697,6 @@
   .feed-footer .badge, .rec-timer, button[type=submit]{border-radius:4px;}
   .section-kicker{border-radius:3px;}
 
-  /* ================= FEED: media shown whole ================= */
-  .feed-card{
-    display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;
-    background:#04141c; padding:0;
-  }
-  .feed-stage{
-    flex:1; min-height:0; display:flex; align-items:center; justify-content:center;
-    background:#04141c; padding:16px 16px 0;
-  }
-  /* contain, never cover: the whole photo or clip stays visible */
-  .feed-media{
-    width:100%; height:100%; max-height:100%; object-fit:contain; display:block; background:#04141c;
-  }
-  .feed-noimage{
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
-    color:#8fb4c4; font-size:.95rem; font-weight:600; height:100%;
-  }
-  .feed-noimage-icon{font-size:3rem;}
-  .feed-scrim{display:none;}
-
-  .feed-caption{background:#04141c; border-top:1px solid rgba(255,255,255,.12); flex-shrink:0;}
-  .feed-caption-bar{
-    width:100%; display:flex; align-items:center; justify-content:space-between; gap:18px;
-    background:none; border:none; color:#fff; padding:16px 24px; cursor:pointer; text-align:left;
-    font-family:inherit;
-  }
-  .feed-caption-main{display:flex; align-items:center; gap:14px; min-width:0;}
-  .feed-caption .feed-tag{
-    margin:0; flex-shrink:0; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
-    padding:5px 11px; font-size:.76rem;
-  }
-  .feed-caption .feed-title{
-    color:#fff; font-size:1.02rem; font-weight:600; margin:0; max-width:none; text-shadow:none;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'Outfit', system-ui, sans-serif;
-  }
-  .feed-caption-toggle{color:rgba(255,255,255,.6); font-size:1.1rem; flex-shrink:0; transition:transform .22s ease;}
-  .feed-caption[data-open="true"] .feed-caption-toggle{transform:rotate(180deg);}
-  .feed-caption-body{
-    max-height:0; overflow:hidden; transition:max-height .28s ease; padding:0 24px;
-  }
-  .feed-caption[data-open="true"] .feed-caption-body{max-height:44vh; overflow-y:auto; padding-bottom:20px;}
-  .feed-caption[data-open="true"] .feed-title{white-space:normal;}
-  .feed-desc{color:#cfe1ea; font-size:.98rem; max-width:70ch; margin:4px 0 14px; text-shadow:none;}
-  .feed-content{display:none;}
-  .feed-hint-scroll{display:none;}
-  .feed-empty{background:var(--sky); justify-content:center; align-items:center;}
-  .feed-empty .feed-content{display:block; text-align:center; padding:0 24px;}
-
-  /* ================= FEED ACTION RAIL (like/comment/share/save/bookmark) ================= */
-  .feed-mute-btn{
-    position:absolute; top:16px; right:16px; z-index:4; width:38px; height:38px; border-radius:50%;
-    background:rgba(4,20,28,.55); border:1px solid rgba(255,255,255,.25); color:#fff; font-size:1.05rem;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px);
-  }
-  .feed-actions{
-    position:absolute; right:10px; bottom:96px; z-index:4; display:flex; flex-direction:column;
-    align-items:center; gap:20px;
-  }
-  .feed-action{
-    background:none; border:none; color:#fff; display:flex; flex-direction:column; align-items:center;
-    gap:4px; cursor:pointer; font-family:inherit; padding:2px;
-  }
-  .feed-action .action-icon{
-    width:46px; height:46px; border-radius:50%; background:rgba(4,20,28,.5); border:1px solid rgba(255,255,255,.18);
-    display:flex; align-items:center; justify-content:center; font-size:1.35rem; backdrop-filter:blur(4px);
-    transition:transform .15s ease, background .15s ease, color .15s ease;
-  }
-  .feed-action:active .action-icon{transform:scale(.88);}
-  .feed-action .action-count, .feed-action .action-label{font-size:.72rem; font-weight:700; text-shadow:0 1px 6px rgba(0,0,0,.6);}
-  .feed-action.action-like.active .action-icon{background:rgba(220,53,69,.92); color:#fff;}
-  .feed-action.action-bookmark.active .action-icon{background:rgba(30,136,168,.92); color:#fff;}
 
   /* toast */
   #mp-toast{
@@ -768,7 +726,12 @@
   .comment-item{padding:12px 0; border-bottom:1px solid var(--line);}
   .comment-head{display:flex; justify-content:space-between; gap:10px; align-items:baseline;}
   .comment-head strong{font-size:.9rem; color:var(--ink);}
-  .comment-time{font-size:.74rem; color:#6f8b96; flex-shrink:0;}
+  .comment-head-right{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .comment-time{font-size:.74rem; color:#6f8b96;}
+  .comment-delete-btn{
+    background:none; border:none; color:var(--warn); font-size:.74rem; font-weight:700; cursor:pointer; padding:0;
+    text-decoration:underline;
+  }
   .comment-body{margin:4px 0 0; font-size:.9rem; color:var(--ink-soft);}
   .comment-compose{padding:14px 20px 20px; border-top:1px solid var(--line); flex-shrink:0;}
   .comment-compose input, .comment-compose textarea{
@@ -823,10 +786,7 @@
     .step-track li .step-dot{margin-right:0;}
     .contact-launcher{padding:28px 22px; gap:14px;}
     .contact-body{padding:0 22px 30px;}
-    .feed-caption-bar{padding:13px 18px;}
-    .feed-caption-body{padding:0 18px;}
-    .feed-caption .feed-title{font-size:.95rem;}
-    .feed-stage{padding:10px 10px 0;}
+    .feed-stage{max-height:60vh;}
     .wiz-count{width:auto; order:0;}
   }
 
@@ -1749,13 +1709,15 @@
     commentsOpenForId = null;
   }
 
+  const COMMENT_EDIT_WINDOW_MINUTES = 15;
+
   async function loadComments(id){
     const list = document.getElementById('comments-list');
     list.innerHTML = '<div class="comments-empty">Loading comments…</div>';
     try{
       const { data, error } = await supabase
         .from('report_comments')
-        .select('id, display_name, body, created_at')
+        .select('id, device_id, display_name, body, created_at')
         .eq('report_id', id)
         .eq('hidden', false)
         .order('created_at', { ascending: false });
@@ -1764,13 +1726,38 @@
         list.innerHTML = '<div class="comments-empty">No comments yet. Be the first to say something.</div>';
         return;
       }
-      list.innerHTML = data.map(c => `
+      list.innerHTML = data.map(c => {
+        const ageMin = (Date.now() - new Date(c.created_at).getTime()) / 60000;
+        const canDelete = c.device_id === deviceId && ageMin <= COMMENT_EDIT_WINDOW_MINUTES;
+        return `
         <div class="comment-item">
-          <div class="comment-head"><strong>${escapeHTML(c.display_name || 'Anonymous')}</strong><span class="comment-time">${timeAgo(c.created_at)}</span></div>
+          <div class="comment-head">
+            <strong>${escapeHTML(c.display_name || 'Anonymous')}</strong>
+            <span class="comment-head-right">
+              <span class="comment-time">${timeAgo(c.created_at)}</span>
+              ${canDelete ? `<button type="button" class="comment-delete-btn" onclick="deleteComment('${c.id}')">Delete</button>` : ''}
+            </span>
+          </div>
           <p class="comment-body">${escapeHTML(c.body)}</p>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     } catch(err){
       list.innerHTML = `<div class="comments-empty">Couldn't load comments: ${escapeHTML(err.message)}</div>`;
+    }
+  }
+
+  async function deleteComment(commentId){
+    if(!confirm('Delete this comment? This can\'t be undone.')) return;
+    try{
+      await callFn('delete-comment', { comment_id: commentId, device_id: deviceId });
+      if(commentsOpenForId){
+        const c = engagementState.counts[commentsOpenForId];
+        if(c) c.comments_count = Math.max(0, (c.comments_count||0) - 1);
+        refreshEngagementUI();
+        loadComments(commentsOpenForId);
+      }
+    } catch(err){
+      toast(err.message || 'Could not delete comment.');
     }
   }
 
@@ -1849,9 +1836,6 @@
 
   function feedItemHTML(r, index){
     const icon = categoryIcons[r.category] || "\u{1F4CC}";
-    // The media is shown whole (contained, never cropped) so nothing in the
-    // photo or clip is hidden behind text. The caption sits underneath as a
-    // closed strip that the reader opens only if they want it.
     const media = r.video
       ? `<video class="feed-media" src="${r.video}" playsinline muted loop preload="metadata"></video>`
       : (r.photo ? `<img class="feed-media" src="${r.photo}" alt="" loading="lazy" decoding="async">` : '');
@@ -1859,11 +1843,23 @@
     const hasVideo = !!r.video;
     return `
       <article class="feed-card${hasMedia ? ' has-media' : ' no-media'}" data-index="${index}" data-id="${r.id || ''}">
-        <div class="feed-stage">${media || `<div class="feed-noimage"><span class="feed-noimage-icon">${icon}</span><span>Written report</span></div>`}</div>
+        <div class="feed-tag"><span class="feed-tag-icon">${icon}</span>${escapeHTML(r.category || 'Other')}</div>
+        <h3 class="feed-title">${escapeHTML(r.title)}</h3>
 
-        ${hasVideo ? `<button type="button" class="feed-mute-btn" aria-label="Toggle sound">🔇</button>` : ''}
+        ${hasMedia ? `
+        <div class="feed-stage">
+          ${media}
+          <div class="feed-media-fallback" hidden>Media couldn't load. It may still be processing, or the file may be unavailable.</div>
+          ${hasVideo ? `<button type="button" class="feed-mute-btn" aria-label="Toggle sound">🔇</button>` : ''}
+        </div>` : `<div class="feed-noimage"><span class="feed-noimage-icon">${icon}</span><span>Written report</span></div>`}
 
-        <div class="feed-actions" role="group" aria-label="Story actions">
+        <p class="feed-desc">${escapeHTML(r.desc)}</p>
+        <div class="feed-footer">
+          <span class="badge">Checked</span>
+          <span class="coord">${escapeHTML(r.pseudonym || "Anonymous")} &middot; ${escapeHTML(r.county || '')}</span>
+        </div>
+
+        <div class="feed-actionbar" role="group" aria-label="Story actions">
           <button type="button" class="feed-action action-like" onclick="toggleLike('${r.id}')" aria-pressed="false">
             <span class="action-icon">♡</span><span class="action-count">0</span>
           </button>
@@ -1879,23 +1875,6 @@
           <button type="button" class="feed-action action-bookmark" onclick="toggleBookmark('${r.id}')" aria-pressed="false">
             <span class="action-icon">🔖</span><span class="action-label">Bookmark</span>
           </button>
-        </div>
-
-        <div class="feed-caption" data-open="false">
-          <button type="button" class="feed-caption-bar" aria-expanded="false">
-            <span class="feed-caption-main">
-              <span class="feed-tag"><span class="feed-tag-icon">${icon}</span>${escapeHTML(r.category || 'Other')}</span>
-              <span class="feed-title">${escapeHTML(r.title)}</span>
-            </span>
-            <span class="feed-caption-toggle" aria-hidden="true">&#8595;</span>
-          </button>
-          <div class="feed-caption-body">
-            <p class="feed-desc">${escapeHTML(r.desc)}</p>
-            <div class="feed-footer">
-              <span class="badge">Checked</span>
-              <span class="coord">${escapeHTML(r.pseudonym || "Anonymous")} &middot; ${escapeHTML(r.county || '')}</span>
-            </div>
-          </div>
         </div>
       </article>`;
   }
@@ -1921,6 +1900,7 @@
     list.innerHTML = filtered.map((r,i) => feedItemHTML(r,i)).join('');
     setupFeedAutoplay();
     setupMuteButtons();
+    setupMediaFallbacks();
     refreshEngagementUI();
   }
 
@@ -1945,7 +1925,7 @@
           v.currentTime = 0;
         }
       });
-    }, { threshold: [0, 0.6, 1], root: document.getElementById('report-list') });
+    }, { threshold: [0, 0.6, 1] });
     document.querySelectorAll('#report-list .feed-card').forEach(c => feedObserver.observe(c));
   }
 
@@ -1959,15 +1939,19 @@
     });
   }
 
-  // One delegated listener for every caption, rather than one per card.
-  document.getElementById('report-list').addEventListener('click', (e) => {
-    const bar = e.target.closest('.feed-caption-bar');
-    if(!bar) return;
-    const cap = bar.closest('.feed-caption');
-    const open = cap.dataset.open === 'true';
-    cap.dataset.open = String(!open);
-    bar.setAttribute('aria-expanded', String(!open));
-  });
+  // If a photo/video fails to load (private bucket, bad URL, still processing),
+  // show a clear message instead of a blank dark box.
+  function setupMediaFallbacks(){
+    document.querySelectorAll('#report-list .feed-stage .feed-media').forEach(el => {
+      el.addEventListener('error', () => {
+        const stage = el.closest('.feed-stage');
+        el.style.display = 'none';
+        const fb = stage.querySelector('.feed-media-fallback');
+        if(fb) fb.hidden = false;
+        console.warn('Media failed to load for a report:', el.src);
+      }, { once: true });
+    });
+  }
 
   document.getElementById('filter-category').addEventListener('change', renderReportList);
   document.getElementById('filter-search').addEventListener('input', renderReportList);
@@ -3518,7 +3502,8 @@
     openComments,
     closeComments,
     toggleCommentLocation,
-    submitComment
+    submitComment,
+    deleteComment
   });
 </script>
 
@@ -3533,14 +3518,14 @@
     </div>
     <div id="comments-list" class="comments-list"></div>
     <div class="comment-compose">
-      <input type="text" id="comment-name" placeholder="Name (optional)" maxlength="60">
+      <input type="text" id="comment-name" placeholder="Name (optional — leave blank to stay anonymous)" maxlength="60">
       <textarea id="comment-body" placeholder="Add a comment…" maxlength="500" rows="2"></textarea>
       <label class="comment-loc-row">
         <input type="checkbox" id="comment-loc-toggle" onchange="toggleCommentLocation(this.checked)">
         <span>Share my location with this comment</span>
       </label>
       <p class="comment-loc-status" id="comment-loc-status"></p>
-      <p class="comment-disclosure">Approximate location (city-level, from your connection) may also be recorded for regional insights.</p>
+      <p class="comment-disclosure">Approximate location (city-level, from your connection) may also be recorded for regional insights. You can delete your comment within 15 minutes of posting.</p>
       <div class="comment-compose-row">
         <span class="comment-submit-status" id="comment-submit-status"></span>
         <button type="button" class="btn btn-solid" onclick="submitComment()">Post</button>
