@@ -529,6 +529,12 @@
     background:rgba(4,20,28,.55); border:1px solid rgba(255,255,255,.25); color:#fff; font-size:1rem;
     display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(4px);
   }
+  .feed-play-overlay{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:3;
+    width:60px; height:60px; border-radius:50%; margin:0; padding:0; text-indent:2px;
+    background:rgba(4,20,28,.6); border:1px solid rgba(255,255,255,.35); color:#fff; font-size:1.35rem;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
   .feed-actionbar{
     display:flex; align-items:center; gap:26px; flex-wrap:wrap;
   }
@@ -1027,6 +1033,7 @@
                 <button type="button" class="small-btn" id="otp-send-btn" onclick="sendEmailOtp()">Send code</button>
               </div>
               <div class="hint">A one-time code confirms this email is active.</div>
+              <span class="geo-status" id="email-status"></span>
               <div class="field" id="otp-verify-block" style="display:none; margin-top:10px;">
                 <label for="r-otp">Enter the code sent to your email</label>
                 <div class="geo-row">
@@ -1034,7 +1041,6 @@
                   <button type="button" class="small-btn" onclick="verifyEmailOtp()">Verify</button>
                 </div>
               </div>
-              <span class="geo-status" id="email-status"></span>
             </div>
           </div>
         </fieldset>
@@ -1850,7 +1856,9 @@
         <div class="feed-stage">
           ${media}
           <div class="feed-media-fallback" hidden>Media couldn't load. It may still be processing, or the file may be unavailable.</div>
-          ${hasVideo ? `<button type="button" class="feed-mute-btn" aria-label="Toggle sound">🔇</button>` : ''}
+          ${hasVideo ? `
+          <button type="button" class="feed-mute-btn" aria-label="Toggle sound">🔇</button>
+          <button type="button" class="feed-play-overlay" aria-label="Play video">▶</button>` : ''}
         </div>` : `<div class="feed-noimage"><span class="feed-noimage-icon">${icon}</span><span>Written report</span></div>`}
 
         <p class="feed-desc">${escapeHTML(r.desc)}</p>
@@ -1935,6 +1943,26 @@
         userUnmuted = !userUnmuted;
         document.querySelectorAll('#report-list video.feed-media').forEach(v => v.muted = !userUnmuted);
         document.querySelectorAll('#report-list .feed-mute-btn').forEach(b => b.textContent = userUnmuted ? '🔊' : '🔇');
+      };
+    });
+    // Safety net: if autoplay is blocked, silently failed, or the person just
+    // wants manual control, every video gets a visible play button that's
+    // shown whenever the video is paused and hidden the moment it plays —
+    // so a clip is never stuck as a blank/black box with no way to start it.
+    document.querySelectorAll('#report-list .feed-card').forEach(card => {
+      const v = card.querySelector('video.feed-media');
+      const overlay = card.querySelector('.feed-play-overlay');
+      if(!v || !overlay) return;
+      const syncOverlay = () => { overlay.style.display = v.paused ? 'flex' : 'none'; };
+      v.addEventListener('play', syncOverlay);
+      v.addEventListener('pause', syncOverlay);
+      v.addEventListener('loadedmetadata', syncOverlay);
+      syncOverlay();
+      overlay.onclick = () => {
+        userUnmuted = true;
+        v.muted = false;
+        document.querySelectorAll('#report-list .feed-mute-btn').forEach(b => b.textContent = '🔊');
+        v.play().catch(() => { v.muted = true; v.play().catch(()=>{}); });
       };
     });
   }
@@ -2388,8 +2416,15 @@
 
       let videoUrl = null;
       if(capturedVideoBlob){
-        const path = `${crypto.randomUUID()}.webm`;
-        const { error: vidErr } = await supabase.storage.from('report-videos').upload(path, capturedVideoBlob, { contentType: 'video/webm' });
+        // Use the blob's ACTUAL recorded type, not a hardcoded guess. iPhone/Safari
+        // can't record WebM at all, MediaRecorder falls back to MP4 there (see
+        // pickMime() above) — hardcoding "video/webm" here previously mislabeled
+        // those files, which plays fine on lenient desktop browsers but fails
+        // silently (blank/black video) on stricter ones.
+        const actualType = capturedVideoBlob.type || 'video/webm';
+        const ext = actualType.includes('mp4') ? 'mp4' : (actualType.includes('quicktime') ? 'mov' : 'webm');
+        const path = `${crypto.randomUUID()}.${ext}`;
+        const { error: vidErr } = await supabase.storage.from('report-videos').upload(path, capturedVideoBlob, { contentType: actualType });
         if(vidErr) throw vidErr;
         videoUrl = supabase.storage.from('report-videos').getPublicUrl(path).data.publicUrl;
       }
