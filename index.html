@@ -498,13 +498,14 @@
   }
   .feed-media-wrap{display:none;}
   .feed-stage{
-    position:relative; background:#04141c; border-radius:6px; overflow:hidden;
+    position:relative; background:var(--sky); border-radius:6px; overflow:hidden;
     display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+    border:1px solid var(--line);
   }
   /* natural size, never cropped, never forced full-screen */
-  .feed-media{width:100%; height:auto; max-height:72vh; object-fit:contain; display:block; background:#04141c;}
+  .feed-media{width:100%; height:auto; max-height:72vh; object-fit:contain; display:block; background:var(--sky);}
   .feed-media-fallback{
-    padding:40px 20px; text-align:center; color:#8fb4c4; font-size:.88rem; background:#0b2530; width:100%;
+    padding:40px 20px; text-align:center; color:var(--ink-soft); font-size:.88rem; background:var(--sky); width:100%;
   }
   .feed-noimage{
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
@@ -1670,25 +1671,123 @@
   }
 
   // ---------- download ----------
+  // ---------- download, with a burned-in "Mtaa Pulse" watermark ----------
+  function triggerDownload(blob, filename){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Draws a small pill-shaped "Mtaa Pulse" badge in the bottom-right corner,
+  // same idea as TikTok's watermark on saved clips — sized relative to the
+  // frame so it scales sensibly on any photo/video resolution.
+  function drawWatermark(ctx, w, h){
+    const pad = Math.max(10, Math.round(w * 0.025));
+    const fontSize = Math.max(13, Math.round(w * 0.028));
+    ctx.font = `700 ${fontSize}px 'Outfit', system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+    const label = '📍 Mtaa Pulse';
+    const textW = ctx.measureText(label).width;
+    const boxW = textW + pad * 2;
+    const boxH = fontSize * 2.1;
+    const x = w - boxW - pad;
+    const y = h - boxH - pad;
+    ctx.fillStyle = 'rgba(4,20,28,0.6)';
+    roundRectPath(ctx, x, y, boxW, boxH, boxH / 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, x + pad, y + boxH / 2);
+  }
+
   async function downloadMedia(id){
     const r = reportById(id);
     if(!r) return;
-    const srcUrl = r.video || r.photo;
-    if(!srcUrl) return;
+    if(r.photo && !r.video) return downloadWatermarkedPhoto(r, id);
+    if(r.video) return downloadWatermarkedVideo(r, id);
+  }
+
+  async function downloadWatermarkedPhoto(r, id){
     try{
-      const resp = await fetch(srcUrl);
-      const blob = await resp.blob();
-      const ext = r.video ? (blob.type.includes('mp4') ? 'mp4' : 'webm') : 'jpg';
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `mtaa-pulse-${id}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = r.photo; });
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || 1080;
+      canvas.height = img.naturalHeight || 1080;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      drawWatermark(ctx, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if(blob) triggerDownload(blob, `mtaa-pulse-${id}.jpg`);
+        else { window.open(r.photo, '_blank'); toast("Couldn't add watermark — opened original instead."); }
+      }, 'image/jpeg', 0.92);
     } catch(err){
-      console.error('Download failed', err);
-      window.open(srcUrl, '_blank');
+      console.error('Watermarking photo failed', err);
+      window.open(r.photo, '_blank');
+      toast("Couldn't add watermark — opened original instead.");
+    }
+  }
+
+  async function downloadWatermarkedVideo(r, id){
+    toast('Preparing your download…');
+    try{
+      const video = document.createElement('video');
+      video.src = r.video;
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.playsInline = true;
+      await new Promise((res, rej) => {
+        video.onloadedmetadata = res;
+        video.onerror = () => rej(new Error('Could not load video'));
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 720;
+      canvas.height = video.videoHeight || 1280;
+      const ctx = canvas.getContext('2d');
+
+      const stream = canvas.captureStream(30);
+      const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+        .find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || 'video/webm';
+      const recorder = new MediaRecorder(stream, { mimeType: mime });
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if(e.data && e.data.size) chunks.push(e.data); };
+      const stopped = new Promise(res => { recorder.onstop = res; });
+
+      let raf;
+      function drawFrame(){
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        drawWatermark(ctx, canvas.width, canvas.height);
+        raf = requestAnimationFrame(drawFrame);
+      }
+      video.onended = () => { cancelAnimationFrame(raf); recorder.stop(); };
+
+      recorder.start();
+      await video.play();
+      drawFrame();
+      await stopped;
+      cancelAnimationFrame(raf);
+
+      const blob = new Blob(chunks, { type: mime.split(';')[0] });
+      triggerDownload(blob, `mtaa-pulse-${id}.webm`);
+    } catch(err){
+      console.error('Watermarking video failed', err);
+      toast("Couldn't add a watermark — opening the original instead.");
+      window.open(r.video, '_blank');
     }
   }
 
