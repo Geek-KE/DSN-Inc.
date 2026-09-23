@@ -1328,13 +1328,22 @@
               </div>
             </details>
             <div class="field">
+              <label for="s-email">Email <span style="font-weight:400;">(for your receipt and access link)</span></label>
+              <input type="email" id="s-email" placeholder="you@example.com">
+            </div>
+            <div class="field">
               <label for="s-phone">M-Pesa phone number <span style="font-weight:400;">(for M-Pesa; leave blank if paying by card)</span></label>
               <input type="text" id="s-phone" placeholder="2547XXXXXXXX">
             </div>
             <div class="submit-row">
-              <button type="button" class="btn btn-primary" onclick="daPayStudent()">Pay now</button>
+              <button type="button" class="btn btn-primary" id="s-pay-btn" onclick="daPayStudent()">Pay now</button>
             </div>
             <span class="geo-status" id="student-status"></span>
+
+            <span style="display:block; text-align:center; margin-top:22px;">
+              <a href="https://intasend.com/security" target="_blank" rel="noopener"><img src="https://intasend-prod-static.s3.amazonaws.com/img/trust-badges/intasend-trust-badge-with-mpesa-hr-light.png" width="220" style="max-width:100%; height:auto;" alt="IntaSend Secure Payments (PCI-DSS Compliant)"></a>
+              <strong><a style="display:block; color:#454545; text-decoration:none; font-size:.78rem; margin-top:.5em;" href="https://intasend.com/security" target="_blank" rel="noopener">Secured by IntaSend Payments</a></strong>
+            </span>
           </div>
         </div>
       </div>
@@ -3013,30 +3022,87 @@
   }
 
   const LEVEL_PRICES = { undergrad: 333, masters: 777, phd: 7777 };
+  const LEVEL_LABEL = { undergrad: 'Undergraduate', masters: 'Masters', phd: 'PhD' };
 
-  // M-Pesa STK Push needs a Safaricom Daraja app (paybill/till, consumer
-  // key/secret, callback URL) , a separate integration from Supabase/OTP.
-  // For now this records the intent as pending_payment; once you have
-  // Daraja set up, add an edge function that triggers STK Push here and
-  // flips this row to 'paid' from the Daraja callback.
+  // ---------- IntaSend checkout (student data-access payments) ----------
+  // Same account used for the payment-link generator that used to live on
+  // this page. IntaSend's hosted checkout supports M-Pesa, card and bank,
+  // and settles in KES, USD, EUR or GBP -- matching the currency picker above.
+  const INTASEND_PUBLIC_KEY = "ISPubKey_live_b8ecb8a1-3a88-4f83-8089-baa9e4279e71"; // <-- swap this later if you rotate keys
+  const INTASEND_TEST_MODE  = false; // this is a LIVE key, so real payments will be created
+  const INTASEND_ENDPOINT = INTASEND_TEST_MODE
+    ? "https://sandbox.intasend.com/api/v1/checkout/"
+    : "https://payment.intasend.com/api/v1/checkout/";
+
+  async function createIntasendCheckout({ amount, currency, email, phone, comment, apiRef }){
+    const payload = {
+      public_key: INTASEND_PUBLIC_KEY,
+      amount: Number(amount),
+      currency,
+      email: email || undefined,
+      phone_number: phone || undefined,
+      comment: comment || "Payment",
+      api_ref: apiRef,
+      host: window.location.origin,
+      redirect_url: window.location.origin + window.location.pathname + "#access-student"
+    };
+    const res = await fetch(INTASEND_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!res.ok || !data.url){
+      throw new Error(data.detail || data.message || JSON.stringify(data));
+    }
+    return data; // data.url = hosted checkout page, data.id = checkout/invoice id
+  }
+
   async function daPayStudent(){
     if(!daSelectedLevel) return daShowStatus('student-status', 'Pick a level first.', false);
     const currency = document.getElementById('s-currency').value;
+    const email = document.getElementById('s-email').value.trim();
     const phone = document.getElementById('s-phone').value.trim();
-    if(currency === 'KES' && !phone) return daShowStatus('student-status', 'Enter your M-Pesa phone number.', false);
+    if(!email) return daShowStatus('student-status', 'Enter your email -- IntaSend needs it for your receipt.', false);
+    if(currency === 'KES' && !phone) return daShowStatus('student-status', 'Enter your M-Pesa phone number, or switch to card by choosing another currency.', false);
+
     const amountKes = LEVEL_PRICES[daSelectedLevel];
     const amountCharged = daConvertFromKes(amountKes, currency);
+
+    const btn = document.getElementById('s-pay-btn');
+    btn.disabled = true;
+    btn.textContent = 'Redirecting to payment…';
+    daShowStatus('student-status', 'Setting up your payment…', true);
+
     try{
-      const { error } = await supabase.from('student_subscriptions').insert({
-        level: daSelectedLevel, phone: phone || null,
-        amount_kes: amountKes, currency, amount_charged: amountCharged
-      });
+      // Record the intent first so we have a row to reconcile against once
+      // IntaSend confirms payment (via their webhook, or manually for now).
+      const { data: sub, error } = await supabase.from('student_subscriptions')
+        .insert({
+          level: daSelectedLevel, phone: phone || null, email,
+          amount_kes: amountKes, currency, amount_charged: amountCharged,
+          status: 'pending_payment'
+        }).select().single();
       if(error) throw error;
-      daShowStatus('student-status', currency === 'KES'
-        ? 'Request recorded. M-Pesa STK Push is not wired up yet. That needs a separate Daraja integration.'
-        : `Request recorded for ${daFormatAmount(amountCharged, currency)}. Card payment in ${currency} is not wired up yet -- that needs a payment provider that settles in ${currency}.`, true);
+
+      const checkout = await createIntasendCheckout({
+        amount: amountCharged,
+        currency,
+        email,
+        phone: phone || undefined,
+        comment: `Mtaa Pulse data access -- ${LEVEL_LABEL[daSelectedLevel]}`,
+        apiRef: 'student-' + sub.id
+      });
+
+      // Keep the IntaSend reference on the row so it can be matched up
+      // against their dashboard/webhook once payment completes.
+      await supabase.from('student_subscriptions').update({ intasend_checkout_id: checkout.id || null }).eq('id', sub.id);
+
+      window.location.href = checkout.url;
     } catch(err){
       daShowStatus('student-status', err.message || 'Could not reach the payment service. Try again shortly.', false);
+      btn.disabled = false;
+      btn.textContent = 'Pay now';
     }
   }
 
