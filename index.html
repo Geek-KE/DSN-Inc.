@@ -259,7 +259,12 @@
   .legend-dot{width:9px; height:9px; border-radius:50%; display:inline-block;}
   .leaflet-popup-content{font-family:'Nunito', system-ui, -apple-system, sans-serif; font-size:.85rem;}
 
-  @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important;}}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+    /* Keep the overlay fade/scale active even with reduced motion on,
+       since it's a short, low-motion cue rather than a distracting effect. */
+    .info-modal, .info-panel, .map-modal, .map-panel{transition:opacity .28s ease, visibility .28s ease, transform .28s ease !important;}
+  }
 
   /* ---------- Admin panel (hidden, reached via #admin) ---------- */
   #admin-overlay{
