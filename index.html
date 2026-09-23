@@ -458,7 +458,7 @@
   #submit-msg{display:none;}
 
   /* ================= FULL-PAGE STORY FEED ================= */
-  .feed-section{padding:0; position:relative; background:#071c26;}
+  .feed-section{padding:0; position:relative; background:var(--sky);}
   .feed-bar{position:sticky; top:var(--header-h); z-index:20;}
   .feed-bar-inner{
     max-width:1180px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between;
@@ -1468,6 +1468,7 @@
 </div>
 
 
+<script src="capacitor-bridge.js"></script>
 <script type="module">
   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -1733,11 +1734,11 @@
       drawWatermark(ctx, canvas.width, canvas.height);
       canvas.toBlob(blob => {
         if(blob) triggerDownload(blob, `mtaa-pulse-${id}.jpg`);
-        else { window.open(r.photo, '_blank'); toast("Couldn't add watermark — opened original instead."); }
+        else { mp.openUrl(r.photo); toast("Couldn't add watermark — opened original instead."); }
       }, 'image/jpeg', 0.92);
     } catch(err){
       console.error('Watermarking photo failed', err);
-      window.open(r.photo, '_blank');
+      mp.openUrl(r.photo);
       toast("Couldn't add watermark — opened original instead.");
     }
   }
@@ -1787,7 +1788,7 @@
     } catch(err){
       console.error('Watermarking video failed', err);
       toast("Couldn't add a watermark — opening the original instead.");
-      window.open(r.video, '_blank');
+      mp.openUrl(r.video);
     }
   }
 
@@ -1878,14 +1879,8 @@
     commentLocationOptIn = checked;
     const status = document.getElementById('comment-loc-status');
     if(!checked){ commentLocationCoords = null; status.textContent = ''; return; }
-    if(!navigator.geolocation){
-      status.textContent = "This browser can't share location.";
-      document.getElementById('comment-loc-toggle').checked = false;
-      commentLocationOptIn = false;
-      return;
-    }
     status.textContent = 'Getting your location…';
-    navigator.geolocation.getCurrentPosition(
+    mp.getCurrentPosition(
       (pos) => {
         commentLocationCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         status.textContent = 'Location will be attached to this comment.';
@@ -2091,11 +2086,6 @@
   // ever rendered on the public-facing feed.
   function captureLocation(){
     const status = document.getElementById('geo-status');
-    if(!navigator.geolocation){
-      status.textContent = "Geolocation not supported on this device.";
-      status.className = "geo-status bad";
-      return;
-    }
     const selectedCounty = document.getElementById('r-county').value;
     if(!selectedCounty){
       status.textContent = "Select a county first.";
@@ -2104,7 +2094,7 @@
     }
     status.textContent = "Requesting location…";
     status.className = "geo-status";
-    navigator.geolocation.getCurrentPosition(
+    mp.getCurrentPosition(
       async pos => {
         capturedLocation = {lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, hierarchy: null, mismatch: false};
         status.textContent = "Verifying location…";
