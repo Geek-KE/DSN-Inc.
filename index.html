@@ -48,7 +48,7 @@
     background:
       radial-gradient(900px 520px at 88% -10%, rgba(30,136,168,.16), transparent 62%),
       radial-gradient(700px 460px at -10% 110%, rgba(30,122,92,.12), transparent 60%),
-      linear-gradient(160deg, #f2fafd 0%, var(--sky) 48%, var(--sky-deep) 100%);
+      var(--sky);
   }
   .hero .wrap{max-width:760px; position:relative; z-index:1;}
   .eyebrow-line{display:flex; align-items:center; gap:10px; margin-bottom:22px; color:var(--verified); font-weight:600; font-size:.92rem;}
@@ -550,7 +550,7 @@
   }
   .feed-action:active .action-icon{transform:scale(.88);}
   .feed-action .action-count, .feed-action .action-label{font-size:.82rem; font-weight:600;}
-  .feed-action.action-like.active .action-icon{background:rgba(220,53,69,.92); color:#fff; border-color:transparent;}
+  .feed-action.action-like.active .action-icon{background:var(--sky); border-color:var(--line);}
   .feed-action.action-bookmark.active .action-icon{background:rgba(30,136,168,.92); color:#fff; border-color:transparent;}
 
   /* ================= ORDER FORM ================= */
@@ -1573,7 +1573,7 @@
         const isLiked = engagementState.liked.has(id);
         likeBtn.classList.toggle('active', isLiked);
         likeBtn.setAttribute('aria-pressed', String(isLiked));
-        likeBtn.querySelector('.action-icon').textContent = isLiked ? '♥' : '♡';
+        likeBtn.querySelector('.action-icon').textContent = isLiked ? '❤️' : '👍';
         likeBtn.querySelector('.action-count').textContent = formatCount(c.likes_count);
       }
       if(bookmarkBtn){
@@ -1963,7 +1963,7 @@
 
         <div class="feed-actionbar" role="group" aria-label="Story actions">
           <button type="button" class="feed-action action-like" onclick="toggleLike('${r.id}')" aria-pressed="false">
-            <span class="action-icon">♡</span><span class="action-count">0</span>
+            <span class="action-icon">👍</span><span class="action-count">0</span>
           </button>
           <button type="button" class="feed-action action-comment" onclick="openComments('${r.id}')">
             <span class="action-icon">💬</span><span class="action-count">0</span>
@@ -2298,14 +2298,14 @@
     try{
       try{
         videoStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode:{ideal: videoFacingMode}, width:{ideal:1280}, height:{ideal:720}, aspectRatio:{ideal:16/9} },
+          video: { facingMode:{ideal: videoFacingMode}, width:{ideal:1280}, height:{ideal:720} },
           audio: true
         });
       } catch(inner){
         // some devices refuse the audio track or the facing mode - fall back step by step
         try{
           videoStream = await navigator.mediaDevices.getUserMedia({
-            video: { width:{ideal:1280}, height:{ideal:720}, aspectRatio:{ideal:16/9} }, audio: true
+            video: { width:{ideal:1280}, height:{ideal:720} }, audio: true
           });
         } catch(inner2){
           videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
