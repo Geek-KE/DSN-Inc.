@@ -782,6 +782,56 @@
   .admin-order-lines div{padding:2px 0; border-bottom:1px dotted var(--line);}
   .admin-order-lines div:last-child{border-bottom:none;}
 
+  /* ---------- live support chat ---------- */
+  .chat-fab{
+    position:fixed; right:22px; bottom:22px; z-index:140; background:var(--trust); color:#fff; border:none;
+    border-radius:50px; padding:14px 20px; font-weight:700; font-size:.92rem; cursor:pointer; display:flex;
+    align-items:center; gap:8px; box-shadow:0 10px 26px -8px rgba(11,79,108,.55); font-family:'Outfit', system-ui, sans-serif;
+  }
+  .chat-fab:hover{background:var(--signal);}
+  .chat-fab .dot{width:8px; height:8px; border-radius:50%; background:#5be3a6; flex-shrink:0;}
+  .chat-sheet{position:fixed; inset:0; z-index:150; display:none;}
+  .chat-sheet.open{display:block;}
+  .chat-sheet-backdrop{position:absolute; inset:0; background:rgba(4,20,28,.55);}
+  .chat-panel{
+    position:absolute; right:22px; bottom:22px; width:380px; max-width:calc(100vw - 32px); height:min(600px, 82vh);
+    background:#fff; border-radius:18px; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.35); animation:sheet-up .22s ease;
+  }
+  .chat-head{
+    display:flex; align-items:center; justify-content:space-between; padding:16px 18px; background:var(--trust); color:#fff;
+    font-family:'Outfit', system-ui, sans-serif; font-weight:700; flex-shrink:0;
+  }
+  .chat-head span.chat-head-sub{display:block; font-weight:400; font-size:.76rem; color:#cfe4ee; margin-top:2px;}
+  .chat-close-btn{background:none; border:none; font-size:1.5rem; line-height:1; color:#fff; cursor:pointer;}
+  .chat-body{flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px; background:var(--sky);}
+  .chat-msg{max-width:80%; padding:9px 13px; border-radius:14px; font-size:.88rem; line-height:1.4; word-wrap:break-word;}
+  .chat-msg.from-customer{align-self:flex-end; background:var(--trust); color:#fff; border-bottom-right-radius:4px;}
+  .chat-msg.from-support{align-self:flex-start; background:#fff; color:var(--ink); border:1px solid var(--line); border-bottom-left-radius:4px;}
+  .chat-msg.from-system{align-self:center; background:none; color:var(--ink-soft); font-size:.78rem; text-align:center;}
+  .chat-msg-time{display:block; font-size:.68rem; opacity:.75; margin-top:3px;}
+  .chat-precall{padding:18px; display:flex; flex-direction:column; gap:10px; flex:1; justify-content:center;}
+  .chat-precall input{
+    width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:8px; font-size:.9rem; color:var(--ink);
+  }
+  .chat-precall input:focus{border-color:var(--signal); outline:none;}
+  .chat-compose{display:flex; gap:8px; padding:12px 14px; border-top:1px solid var(--line); flex-shrink:0; background:#fff;}
+  .chat-compose input{
+    flex:1; padding:10px 12px; border:1.5px solid var(--line); border-radius:20px; font-size:.88rem; color:var(--ink);
+  }
+  .chat-compose input:focus{border-color:var(--signal); outline:none;}
+  .chat-compose button{
+    background:var(--trust); color:#fff; border:none; border-radius:20px; padding:0 18px; font-weight:700; font-size:.85rem; cursor:pointer;
+  }
+  .chat-compose button:hover{background:var(--signal);}
+  .chat-foot{padding:10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:10px; flex-shrink:0;}
+  .chat-end-btn{background:none; border:none; color:var(--warn); font-weight:700; font-size:.8rem; cursor:pointer; text-decoration:underline; padding:0;}
+  .chat-status{font-size:.76rem; color:var(--ink-soft);}
+  @media (max-width:480px){
+    .chat-panel{right:0; bottom:0; left:0; top:0; width:100%; max-width:100%; height:100%; border-radius:0;}
+    .chat-fab{right:14px; bottom:14px;}
+  }
+
   /* ---------- globe ---------- */
   .globe-note{
     position:absolute; bottom:14px; right:14px; z-index:5; background:rgba(4,20,28,.82); color:#cfe4ee;
@@ -1250,30 +1300,39 @@
       <div class="access-panel active" id="access-student">
         <div class="access-layout">
           <div class="access-form">
-            <details class="pricing-toggle">
+            <div class="field">
+              <label for="s-currency">Pay with</label>
+              <select id="s-currency" onchange="daRefreshPriceGrid()">
+                <option value="KES">Kenyan Shilling (KSh)</option>
+                <option value="USD">US Dollar ($)</option>
+                <option value="EUR">Euro (€)</option>
+                <option value="GBP">British Pound (£)</option>
+              </select>
+              <div class="hint">Prices are set in KSh; amounts below update to roughly match your chosen currency at today's rate.</div>
+            </div>
+            <details class="pricing-toggle" open>
               <summary>See pricing</summary>
               <div class="level-list" id="price-grid">
                 <div class="level-row" data-level="undergrad" onclick="selectLevel(this)">
                   <div class="level-name">Undergraduate</div>
-                  <div class="level-price">KSh 333</div>
+                  <div class="level-price" data-kes="333">KSh 333</div>
                 </div>
                 <div class="level-row" data-level="masters" onclick="selectLevel(this)">
                   <div class="level-name">Masters</div>
-                  <div class="level-price">KSh 777</div>
+                  <div class="level-price" data-kes="777">KSh 777</div>
                 </div>
                 <div class="level-row" data-level="phd" onclick="selectLevel(this)">
                   <div class="level-name">PhD</div>
-                  <div class="level-price">KSh 7,777</div>
+                  <div class="level-price" data-kes="7777">KSh 7,777</div>
                 </div>
               </div>
             </details>
             <div class="field">
-              <label for="s-phone">M-Pesa phone number</label>
+              <label for="s-phone">M-Pesa phone number <span style="font-weight:400;">(for M-Pesa; leave blank if paying by card)</span></label>
               <input type="text" id="s-phone" placeholder="2547XXXXXXXX">
             </div>
             <div class="submit-row">
-              <button type="button" class="btn btn-primary" onclick="daPayStudent()">Pay with M-Pesa</button>
-              <button type="button" class="small-btn" onclick="alert('Card payment goes through the same subscribe endpoint via Paystack. Wire up your publishable key on the backend.')">Pay with card instead</button>
+              <button type="button" class="btn btn-primary" onclick="daPayStudent()">Pay now</button>
             </div>
             <span class="geo-status" id="student-status"></span>
           </div>
@@ -1407,6 +1466,16 @@
             </div>
 
             <div class="field">
+              <label for="ord-currency">Currency you'd like the quote and invoice in</label>
+              <select id="ord-currency">
+                <option value="KES">Kenyan Shilling (KSh)</option>
+                <option value="USD">US Dollar ($)</option>
+                <option value="EUR">Euro (€)</option>
+                <option value="GBP">British Pound (£)</option>
+              </select>
+            </div>
+
+            <div class="field">
               <label for="req-desc">Anything else we should know?</label>
               <textarea id="req-desc" rows="3" placeholder="e.g. Security incident trends in Turkana County over the last 12 months, with risk scoring by ward."></textarea>
             </div>
@@ -1430,6 +1499,19 @@
               <div class="field">
                 <label for="p-code">Access code</label>
                 <input type="text" id="p-code" placeholder="SD-XXXXXXXX">
+              </div>
+              <div class="field">
+                <label for="p-currency">Currency you paid in</label>
+                <select id="p-currency">
+                  <option value="KES">Kenyan Shilling (KSh)</option>
+                  <option value="USD">US Dollar ($)</option>
+                  <option value="EUR">Euro (€)</option>
+                  <option value="GBP">British Pound (£)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="p-amount">Amount paid</label>
+                <input type="text" id="p-amount" placeholder="e.g. 500000">
               </div>
               <div class="field">
                 <label for="p-ref">M-Pesa transaction code or card receipt</label>
@@ -2899,6 +2981,31 @@
     daSelectedLevel = row.dataset.level;
   }
 
+  // Approximate KES conversion rates, just for display -- the actual charge
+  // is still processed in whatever currency the payment provider settles in.
+  // Update these periodically, or swap for a live FX rate lookup later.
+  const DA_FX_FROM_KES = { KES: 1, USD: 0.0077, EUR: 0.0071, GBP: 0.0061 };
+  const DA_CURRENCY_SYMBOL = { KES: 'KSh', USD: '$', EUR: '€', GBP: '£' };
+
+  function daConvertFromKes(amountKes, currency){
+    const rate = DA_FX_FROM_KES[currency] ?? 1;
+    const converted = amountKes * rate;
+    return currency === 'KES' ? Math.round(converted) : Math.round(converted * 100) / 100;
+  }
+
+  function daFormatAmount(amount, currency){
+    const symbol = DA_CURRENCY_SYMBOL[currency] || currency;
+    return symbol + ' ' + amount.toLocaleString();
+  }
+
+  function daRefreshPriceGrid(){
+    const currency = document.getElementById('s-currency').value;
+    document.querySelectorAll('#price-grid .level-price').forEach(el => {
+      const kes = Number(el.dataset.kes);
+      el.textContent = daFormatAmount(daConvertFromKes(kes, currency), currency);
+    });
+  }
+
   function daShowStatus(id, msg, ok){
     const el = document.getElementById(id);
     el.textContent = msg;
@@ -2914,14 +3021,20 @@
   // flips this row to 'paid' from the Daraja callback.
   async function daPayStudent(){
     if(!daSelectedLevel) return daShowStatus('student-status', 'Pick a level first.', false);
+    const currency = document.getElementById('s-currency').value;
     const phone = document.getElementById('s-phone').value.trim();
-    if(!phone) return daShowStatus('student-status', 'Enter your M-Pesa phone number.', false);
+    if(currency === 'KES' && !phone) return daShowStatus('student-status', 'Enter your M-Pesa phone number.', false);
+    const amountKes = LEVEL_PRICES[daSelectedLevel];
+    const amountCharged = daConvertFromKes(amountKes, currency);
     try{
       const { error } = await supabase.from('student_subscriptions').insert({
-        level: daSelectedLevel, phone, amount_kes: LEVEL_PRICES[daSelectedLevel]
+        level: daSelectedLevel, phone: phone || null,
+        amount_kes: amountKes, currency, amount_charged: amountCharged
       });
       if(error) throw error;
-      daShowStatus('student-status', 'Request recorded. M-Pesa STK Push is not wired up yet. That needs a separate Daraja integration.', true);
+      daShowStatus('student-status', currency === 'KES'
+        ? 'Request recorded. M-Pesa STK Push is not wired up yet. That needs a separate Daraja integration.'
+        : `Request recorded for ${daFormatAmount(amountCharged, currency)}. Card payment in ${currency} is not wired up yet -- that needs a payment provider that settles in ${currency}.`, true);
     } catch(err){
       daShowStatus('student-status', err.message || 'Could not reach the payment service. Try again shortly.', false);
     }
@@ -3003,6 +3116,7 @@
       period: get('ord-period'),
       format: get('ord-format'),
       budget: get('ord-budget'),
+      currency: get('ord-currency') || 'KES',
       notes: get('req-desc')
     };
   }
@@ -3078,6 +3192,7 @@
       `Period: ${f.period}`,
       `Format: ${f.format}`,
       `Budget: ${f.budget || 'Quote requested'}`,
+      `Preferred quote/invoice currency: ${f.currency}`,
       f.notes ? `Notes: ${f.notes}` : null
     ].filter(Boolean).join('\n');
 
@@ -3089,7 +3204,7 @@
 
     try{
       const { data, error } = await supabase.from('data_requests')
-        .insert({ requester_type: f.requesterType, description }).select().single();
+        .insert({ requester_type: f.requesterType, description, currency: f.currency }).select().single();
       if(error) throw error;
       const ref = (data && data.id) ? data.id.slice(0,8).toUpperCase() : 'PENDING';
       daShowStatus('request-status', `Order received. Your reference is ${ref}. We'll email a quote to ${f.email}.`, true);
@@ -3126,13 +3241,18 @@
   let daPaymentVerificationId = null, daPaymentEmail = null;
   async function daVerifyPayment(){
     const code = document.getElementById('p-code').value.trim();
+    const currency = document.getElementById('p-currency').value;
+    const amount = document.getElementById('p-amount').value.trim();
     const ref = document.getElementById('p-ref').value.trim();
     const phone = document.getElementById('p-phone').value.trim();
     const email = document.getElementById('p-email').value.trim();
     if(!ref || !phone || !email) return daShowStatus('payment-status', 'Fill in the payment reference, phone and email.', false);
     try{
       const { data, error } = await supabase.from('payment_verifications')
-        .insert({ code: code || null, card_or_mpesa_ref: ref, phone, email }).select().single();
+        .insert({
+          code: code || null, card_or_mpesa_ref: ref, phone, email,
+          currency, amount: amount ? Number(amount) : null
+        }).select().single();
       if(error) throw error;
       await callFn('send-otp', { email, purpose: 'access_payment', referenceId: data.id });
       daPaymentVerificationId = data.id;
@@ -3616,6 +3736,128 @@
   window.addEventListener('hashchange', checkAdminRoute);
   checkAdminRoute();
 
+  // ---------- Live support chat ----------
+  const SUPPORT_INBOX = CONTACT_INBOX; // same team inbox used for the contact form
+  let chatSessionId = null, chatCustomerName = '', chatCustomerEmail = '', chatChannel = null, chatMessages = [];
+
+  function chatOpen(){
+    document.getElementById('chat-sheet').classList.add('open');
+    document.getElementById('chat-sheet').setAttribute('aria-hidden', 'false');
+    if(chatSessionId) document.getElementById('chat-input').focus();
+  }
+  function chatClose(){
+    document.getElementById('chat-sheet').classList.remove('open');
+    document.getElementById('chat-sheet').setAttribute('aria-hidden', 'true');
+  }
+
+  function chatRenderMessages(){
+    const body = document.getElementById('chat-body');
+    body.innerHTML = chatMessages.map(m => {
+      const cls = m.sender === 'customer' ? 'from-customer' : (m.sender === 'support' ? 'from-support' : 'from-system');
+      const time = new Date(m.created_at || Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      return `<div class="chat-msg ${cls}">${escapeHTML(m.message)}<span class="chat-msg-time">${m.sender === 'system' ? '' : time}</span></div>`;
+    }).join('');
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function chatPushLocal(sender, message){
+    chatMessages.push({ sender, message, created_at: new Date().toISOString() });
+    chatRenderMessages();
+  }
+
+  async function chatStart(){
+    const name = document.getElementById('chat-name').value.trim();
+    const email = document.getElementById('chat-email').value.trim();
+    const topic = document.getElementById('chat-topic').value.trim();
+    if(!name || !email) return;
+    chatCustomerName = name;
+    chatCustomerEmail = email;
+    document.getElementById('chat-precall').style.display = 'none';
+    document.getElementById('chat-body').style.display = 'flex';
+    document.getElementById('chat-compose').style.display = 'flex';
+    document.getElementById('chat-foot').style.display = 'flex';
+
+    try{
+      const { data, error } = await supabase.from('support_chat_sessions')
+        .insert({ name, email, topic: topic || null, status: 'open' }).select().single();
+      if(error) throw error;
+      chatSessionId = data.id;
+
+      chatMessages = [];
+      chatPushLocal('system', `Chat started with ${name}. A support agent will join shortly.`);
+      if(topic) chatPushLocal('customer', topic);
+      if(topic){
+        await supabase.from('support_chat_messages').insert({ session_id: chatSessionId, sender: 'customer', message: topic });
+      }
+
+      // Live updates: whenever support (or the customer, from another tab) adds
+      // a row for this session, reflect it here without a page refresh.
+      chatChannel = supabase.channel('chat-' + chatSessionId)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_chat_messages', filter: `session_id=eq.${chatSessionId}` },
+          (payload) => {
+            const row = payload.new;
+            if(row.sender === 'support') chatPushLocal('support', row.message);
+          })
+        .subscribe();
+
+      document.getElementById('chat-status').textContent = 'Connected';
+    } catch(err){
+      chatPushLocal('system', 'Could not start a live session (' + (err.message || 'connection issue') + '). You can still type below and email the transcript when done.');
+    }
+  }
+
+  async function chatSend(){
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if(!message) return;
+    input.value = '';
+    chatPushLocal('customer', message);
+    if(chatSessionId){
+      try{
+        await supabase.from('support_chat_messages').insert({ session_id: chatSessionId, sender: 'customer', message });
+      } catch(err){ /* message still shows locally; transcript email will still include it */ }
+    }
+  }
+
+  function chatTranscriptText(){
+    const header = `Mtaa Pulse support chat\nCustomer: ${chatCustomerName} <${chatCustomerEmail}>\nSession: ${chatSessionId || 'offline'}\nDate: ${new Date().toLocaleString()}\n\n`;
+    const lines = chatMessages
+      .filter(m => m.sender !== 'system')
+      .map(m => `[${new Date(m.created_at).toLocaleTimeString()}] ${m.sender === 'customer' ? chatCustomerName : 'Support'}: ${m.message}`);
+    return header + lines.join('\n');
+  }
+
+  async function chatEnd(){
+    if(chatMessages.filter(m => m.sender !== 'system').length === 0){
+      chatClose();
+      return;
+    }
+    const transcript = chatTranscriptText();
+    document.getElementById('chat-status').textContent = 'Sending transcript…';
+    try{
+      if(chatSessionId){
+        await supabase.from('support_chat_sessions').update({ status: 'closed', closed_at: new Date().toISOString() }).eq('id', chatSessionId);
+      }
+      // Requires a 'send-chat-transcript' edge function (same pattern as send-otp)
+      // that emails the transcript to both addresses below.
+      await callFn('send-chat-transcript', {
+        sessionId: chatSessionId, customerName: chatCustomerName, customerEmail: chatCustomerEmail,
+        supportEmail: SUPPORT_INBOX, transcript
+      });
+      chatPushLocal('system', `Transcript emailed to you and to ${SUPPORT_INBOX}.`);
+      document.getElementById('chat-status').textContent = 'Chat ended';
+    } catch(err){
+      // Fall back to a pre-filled email so the transcript is never lost, even
+      // if the edge function above has not been deployed yet.
+      const subject = encodeURIComponent('Mtaa Pulse support chat transcript');
+      const body = encodeURIComponent(transcript);
+      window.location.href = `mailto:${SUPPORT_INBOX},${chatCustomerEmail}?subject=${subject}&body=${body}`;
+      chatPushLocal('system', `Opening your email app to send the transcript to you and ${SUPPORT_INBOX}.`);
+      document.getElementById('chat-status').textContent = 'Chat ended';
+    }
+    if(chatChannel){ supabase.removeChannel(chatChannel); chatChannel = null; }
+  }
+
   Object.assign(window, {
     adminSendCode, adminVerifyCode, adminLogout, adminAct, adminLoadReports, adminLoadOrders, adminToggleCard,
     captureLocation,
@@ -3652,7 +3894,12 @@
     closeComments,
     toggleCommentLocation,
     submitComment,
-    deleteComment
+    deleteComment,
+    chatOpen,
+    chatClose,
+    chatStart,
+    chatSend,
+    chatEnd
   });
 </script>
 
@@ -3679,6 +3926,40 @@
         <span class="comment-submit-status" id="comment-submit-status"></span>
         <button type="button" class="btn btn-solid" onclick="submitComment()">Post</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Live support chat ---------- -->
+<button type="button" class="chat-fab" onclick="chatOpen()" aria-label="Chat with support">
+  <span class="dot"></span> Chat with support
+</button>
+<div id="chat-sheet" class="chat-sheet" aria-hidden="true">
+  <div class="chat-sheet-backdrop" onclick="chatClose()"></div>
+  <div class="chat-panel" role="dialog" aria-modal="true" aria-label="Support chat">
+    <div class="chat-head">
+      <span>Mtaa Pulse support
+        <span class="chat-head-sub">Chat with our team &mdash; the transcript can be emailed to you when you're done.</span>
+      </span>
+      <button type="button" class="chat-close-btn" onclick="chatClose()" aria-label="Close chat">&times;</button>
+    </div>
+
+    <div class="chat-precall" id="chat-precall">
+      <p class="hint">Tell us who you are so we can reply and email you the transcript afterwards.</p>
+      <input type="text" id="chat-name" placeholder="Your name">
+      <input type="email" id="chat-email" placeholder="Your email">
+      <input type="text" id="chat-topic" placeholder="What do you need help with? (optional)">
+      <button type="button" class="btn btn-primary" onclick="chatStart()">Start chat</button>
+    </div>
+
+    <div class="chat-body" id="chat-body" style="display:none;"></div>
+    <div class="chat-compose" id="chat-compose" style="display:none;">
+      <input type="text" id="chat-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter') chatSend()">
+      <button type="button" onclick="chatSend()">Send</button>
+    </div>
+    <div class="chat-foot" id="chat-foot" style="display:none;">
+      <span class="chat-status" id="chat-status"></span>
+      <button type="button" class="chat-end-btn" onclick="chatEnd()">End chat &amp; email transcript</button>
     </div>
   </div>
 </div>
