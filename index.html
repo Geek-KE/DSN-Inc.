@@ -207,18 +207,40 @@
   .pricing-toggle[open] summary{margin-bottom:4px;}
 
   /* MAP MODAL */
-  .map-modal{position:fixed; inset:0; z-index:100; background:rgba(11,32,42,.72); display:none; align-items:center; justify-content:center; padding:24px;}
-  .map-modal.open{display:flex;}
-  .map-panel{background:#fff; border-radius:16px; width:100%; max-width:1040px; height:min(720px,90vh); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);}
+  .map-modal{
+    position:fixed; inset:0; z-index:100; background:rgba(11,32,42,.72);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .28s ease, visibility .28s ease;
+  }
+  .map-modal.open{opacity:1; visibility:visible; pointer-events:auto;}
+  .map-panel{
+    background:#fff; border-radius:16px; width:100%; max-width:1040px; height:min(720px,90vh);
+    display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);
+    transform:scale(.96) translateY(8px); opacity:0;
+    transition:transform .28s ease, opacity .28s ease;
+  }
+  .map-modal.open .map-panel{transform:scale(1) translateY(0); opacity:1;}
   .map-panel-head{display:flex; align-items:center; justify-content:space-between; padding:16px 22px; border-bottom:1px solid var(--line);}
   .map-panel-head h3{margin:0; font-size:1.1rem;}
   .map-close{background:none; border:none; font-size:1.4rem; line-height:1; color:var(--ink-soft); cursor:pointer; padding:4px 8px;}
   .map-close:hover{color:var(--trust);}
 
   /* ---------- Generic info modal (Data usage, Who reads this, Data access, Contact) ---------- */
-  .info-modal{position:fixed; inset:0; z-index:110; background:rgba(11,32,42,.72); display:none; align-items:center; justify-content:center; padding:24px;}
-  .info-modal.open{display:flex;}
-  .info-panel{background:#fff; border-radius:16px; width:100%; max-width:760px; max-height:min(760px,88vh); display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);}
+  .info-modal{
+    position:fixed; inset:0; z-index:110; background:rgba(11,32,42,.72);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .28s ease, visibility .28s ease;
+  }
+  .info-modal.open{opacity:1; visibility:visible; pointer-events:auto;}
+  .info-panel{
+    background:#fff; border-radius:16px; width:100%; max-width:760px; max-height:min(760px,88vh);
+    display:flex; flex-direction:column; overflow:hidden; box-shadow:var(--shadow);
+    transform:scale(.96) translateY(8px); opacity:0;
+    transition:transform .28s ease, opacity .28s ease;
+  }
+  .info-modal.open .info-panel{transform:scale(1) translateY(0); opacity:1;}
   .info-panel-head{display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:26px 30px; background:var(--sky); border-radius:16px 16px 0 0;}
   .info-panel-head .section-kicker{margin-bottom:8px;}
   .info-panel-head h3{margin:0; font-size:clamp(1.3rem,2.2vw,1.7rem);}
@@ -3402,7 +3424,10 @@
     if(e.key === 'Escape') closeInfoModal();
   });
 
-  // A deep link into one of these sections opens the matching modal on arrival.
+  // Nav/footer links to these sections open the matching modal directly,
+  // WITHOUT writing a #hash into the URL. That means a refresh (or sharing
+  // the plain URL) always lands on the normal home page, never back inside
+  // an overlay.
   const MODAL_TARGETS = {
     '#data-use': 'modal-data-use',
     '#audiences': 'modal-audiences',
@@ -3410,16 +3435,14 @@
     '#contact': 'modal-contact'
   };
 
-  function openModalFor(hash){
-    const id = MODAL_TARGETS[hash];
-    if(id) openInfoModal(id);
-  }
-
   document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', () => openModalFor(a.getAttribute('href')));
+    const id = MODAL_TARGETS[a.getAttribute('href')];
+    if(!id) return; // leave normal in-page anchors (Report, Stories, etc.) alone
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      openInfoModal(id);
+    });
   });
-  window.addEventListener('hashchange', () => openModalFor(window.location.hash));
-  openModalFor(window.location.hash);
 
   // Expose functions used by inline onclick="" handlers in the HTML.
   // This module's top-level functions are scoped to the module and are
