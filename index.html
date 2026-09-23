@@ -45,10 +45,7 @@
   .hero{
     padding:96px 0 88px; border-bottom:1px solid var(--line);
     position:relative; overflow:hidden;
-    background:
-      radial-gradient(900px 520px at 88% -10%, rgba(30,136,168,.16), transparent 62%),
-      radial-gradient(700px 460px at -10% 110%, rgba(30,122,92,.12), transparent 60%),
-      var(--sky);
+    background:var(--sky);
   }
   .hero .wrap{max-width:760px; position:relative; z-index:1;}
   .eyebrow-line{display:flex; align-items:center; gap:10px; margin-bottom:22px; color:var(--verified); font-weight:600; font-size:.92rem;}
@@ -3405,8 +3402,24 @@
     if(e.key === 'Escape') closeInfoModal();
   });
 
-  // Deep-link modal auto-open removed: clicking any #-link (nav, hamburger
-  // menu, etc.) now behaves normally and just scrolls to the section.
+  // A deep link into one of these sections opens the matching modal on arrival.
+  const MODAL_TARGETS = {
+    '#data-use': 'modal-data-use',
+    '#audiences': 'modal-audiences',
+    '#access': 'modal-access',
+    '#contact': 'modal-contact'
+  };
+
+  function openModalFor(hash){
+    const id = MODAL_TARGETS[hash];
+    if(id) openInfoModal(id);
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', () => openModalFor(a.getAttribute('href')));
+  });
+  window.addEventListener('hashchange', () => openModalFor(window.location.hash));
+  openModalFor(window.location.hash);
 
   // Expose functions used by inline onclick="" handlers in the HTML.
   // This module's top-level functions are scoped to the module and are
