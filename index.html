@@ -3024,46 +3024,17 @@
   const LEVEL_PRICES = { undergrad: 333, masters: 777, phd: 7777 };
   const LEVEL_LABEL = { undergrad: 'Undergraduate', masters: 'Masters', phd: 'PhD' };
 
-  // ---------- IntaSend checkout (student data-access payments) ----------
-  // Same account used for the payment-link generator that used to live on
-  // this page. IntaSend's hosted checkout supports M-Pesa, card and bank,
-  // and settles in KES, USD, EUR or GBP -- matching the currency picker above.
-  const INTASEND_PUBLIC_KEY = "ISPubKey_live_b8ecb8a1-3a88-4f83-8089-baa9e4279e71"; // <-- swap this later if you rotate keys
-  const INTASEND_TEST_MODE  = false; // this is a LIVE key, so real payments will be created
-  const INTASEND_ENDPOINT = INTASEND_TEST_MODE
-    ? "https://sandbox.intasend.com/api/v1/checkout/"
-    : "https://payment.intasend.com/api/v1/checkout/";
-
-  async function createIntasendCheckout({ amount, currency, email, phone, comment, apiRef }){
-    const payload = {
-      public_key: INTASEND_PUBLIC_KEY,
-      amount: Number(amount),
-      currency,
-      email: email || undefined,
-      phone_number: phone || undefined,
-      comment: comment || "Payment",
-      api_ref: apiRef,
-      host: window.location.origin,
-      redirect_url: window.location.origin + window.location.pathname + "#access-student"
-    };
-    const res = await fetch(INTASEND_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if(!res.ok || !data.url){
-      throw new Error(data.detail || data.message || JSON.stringify(data));
-    }
-    return data; // data.url = hosted checkout page, data.id = checkout/invoice id
-  }
-
+  // ---------- PesaPal checkout (student data-access payments) ----------
+  // The actual PesaPal auth/order calls happen server-side in the
+  // "pesapal-order" Supabase Edge Function (consumer key/secret never touch
+  // the browser). This just calls that function and redirects to the
+  // hosted PesaPal payment page it returns.
   async function daPayStudent(){
     if(!daSelectedLevel) return daShowStatus('student-status', 'Pick a level first.', false);
     const currency = document.getElementById('s-currency').value;
     const email = document.getElementById('s-email').value.trim();
     const phone = document.getElementById('s-phone').value.trim();
-    if(!email) return daShowStatus('student-status', 'Enter your email -- IntaSend needs it for your receipt.', false);
+    if(!email) return daShowStatus('student-status', 'Enter your email -- PesaPal needs it for your receipt.', false);
     if(currency === 'KES' && !phone) return daShowStatus('student-status', 'Enter your M-Pesa phone number, or switch to card by choosing another currency.', false);
 
     const amountKes = LEVEL_PRICES[daSelectedLevel];
@@ -3075,30 +3046,18 @@
     daShowStatus('student-status', 'Setting up your payment…', true);
 
     try{
-      // Record the intent first so we have a row to reconcile against once
-      // IntaSend confirms payment (via their webhook, or manually for now).
-      const { data: sub, error } = await supabase.from('student_subscriptions')
-        .insert({
-          level: daSelectedLevel, phone: phone || null, email,
-          amount_kes: amountKes, currency, amount_charged: amountCharged,
-          status: 'pending_payment'
-        }).select().single();
-      if(error) throw error;
-
-      const checkout = await createIntasendCheckout({
-        amount: amountCharged,
+      const checkout = await callFn('pesapal-order', {
+        kind: 'student',
+        level: daSelectedLevel,
+        name: LEVEL_LABEL[daSelectedLevel],
         currency,
+        amount_kes: amountKes,
+        amount_charged: amountCharged,
         email,
-        phone: phone || undefined,
-        comment: `Mtaa Pulse data access -- ${LEVEL_LABEL[daSelectedLevel]}`,
-        apiRef: 'student-' + sub.id
+        phone: phone || undefined
       });
 
-      // Keep the IntaSend reference on the row so it can be matched up
-      // against their dashboard/webhook once payment completes.
-      await supabase.from('student_subscriptions').update({ intasend_checkout_id: checkout.id || null }).eq('id', sub.id);
-
-      window.location.href = checkout.url;
+      window.location.href = checkout.redirect_url;
     } catch(err){
       daShowStatus('student-status', err.message || 'Could not reach the payment service. Try again shortly.', false);
       btn.disabled = false;
